@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" 
+    android:padding="5dp"
+    android:background="@drawable/device_list_style">
+    
+	
+     
+    <ImageView
+        android:id="@+id/devIcon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true"
+        android:layout_gravity="center_vertical"
+        android:background="@drawable/device_value_bg"
+        android:src="@drawable/inknon" />
+
+    <TextView
+        android:id="@+id/devVal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/devIcon"
+        android:layout_centerVertical="true"
+        android:layout_toLeftOf="@+id/btnPicker"
+        android:layout_marginRight="5dp"
+        android:textSize="16sp"
+        android:textColor="@color/cyan" />
+
+    <ImageButton
+        android:id="@+id/btnPicker"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:background="@android:color/transparent"
+        android:src="@drawable/color_picker" />
+
+       <TextView
+           android:id="@+id/tvInOut"
+           android:layout_width="wrap_content"
+           android:layout_height="wrap_content"
+           android:layout_centerVertical="true"
+           android:layout_toRightOf="@+id/devIcon"
+           android:layout_marginLeft="5dp"
+           android:background="@drawable/io_info_style"
+           android:gravity="center_vertical|center_horizontal"
+           android:text="IO"
+           android:textAllCaps="true"
+           android:textColor="@color/white"
+           android:textSize="20sp"
+           android:textStyle="bold" />
+
+       <TextView
+           android:id="@+id/devName"
+           android:layout_width="wrap_content"
+           android:layout_height="wrap_content"
+           android:layout_centerVertical="true"
+           android:layout_marginLeft="5dp"
+           android:layout_toRightOf="@+id/tvInOut"
+           android:text="@string/deviceName"
+           android:textSize="16sp" />
+    
+</RelativeLayout>

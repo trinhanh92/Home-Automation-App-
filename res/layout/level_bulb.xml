@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/device_list_style"
+    android:padding="5dp" >
+
+    <ImageView
+        android:id="@+id/devIcon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true"
+        android:layout_gravity="center_vertical"
+        android:background="@drawable/device_value_bg"
+        android:src="@drawable/inknon" />
+
+    <LinearLayout
+        android:id="@+id/linearLayout1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:orientation="vertical" >
+
+        <SeekBar
+            android:id="@+id/dimBar"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:max="100"
+            android:progressDrawable="@drawable/progress_bg"
+            android:thumb="@drawable/seek_thumb3" />
+
+        <TextView
+            android:id="@+id/devVal"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_horizontal"
+            android:text="On"
+            android:textColor="@color/cyan"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/linearLayout2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_toLeftOf="@+id/linearLayout1"
+        android:orientation="vertical" >
+
+        <SeekBar
+            android:id="@+id/seekBlink"
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:max="9"
+            android:progressDrawable="@drawable/progress_bg"
+            android:thumb="@drawable/seek_thumb3" />
+
+        <TextView
+            android:id="@+id/devBlinkVal"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_horizontal"
+            android:text="Blink"
+            android:textColor="@color/cyan"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+    <!-- <Spinner
+        android:id="@+id/blinkVal"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_toLeftOf="@+id/linearLayout1" /> -->
+
+    <TextView
+        android:id="@+id/devName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_marginLeft="5dp"
+        android:layout_toRightOf="@+id/tvInOut"
+        android:text="@string/deviceName"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/tvInOut"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_marginLeft="5dp"
+        android:layout_toRightOf="@+id/devIcon"
+        android:background="@drawable/io_info_style"
+        android:gravity="center_vertical|center_horizontal"
+        android:text="IO"
+        android:textAllCaps="true"
+        android:textColor="@color/white"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+</RelativeLayout>
