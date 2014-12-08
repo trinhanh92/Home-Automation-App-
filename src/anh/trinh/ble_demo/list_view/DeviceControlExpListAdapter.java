@@ -41,7 +41,7 @@ import anh.trinh.ble_demo.data.DataConversion;
 import anh.trinh.ble_demo.data.DeviceTypeDef;
 
 
-public class ExpandableListViewAdapter extends BaseExpandableListAdapter {
+public class DeviceControlExpListAdapter extends BaseExpandableListAdapter {
 	
 	private static final String TAG = "ExpandableListView"; 
 	private HomeActivity 		mContext;
@@ -63,7 +63,7 @@ public class ExpandableListViewAdapter extends BaseExpandableListAdapter {
 	/**
 	 * Constructor 
 	 */
-	public ExpandableListViewAdapter(	HomeActivity mContext, 
+	public DeviceControlExpListAdapter(	HomeActivity mContext, 
 										ArrayList<Zone_c> listParent)
 	{
 		this.mContext	= mContext;

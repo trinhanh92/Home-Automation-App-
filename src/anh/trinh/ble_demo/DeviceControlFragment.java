@@ -36,12 +36,12 @@ import anh.trinh.ble_demo.data.DeviceInfo;
 import anh.trinh.ble_demo.data.DeviceTypeDef;
 import anh.trinh.ble_demo.data.ProcessBTMsg;
 import anh.trinh.ble_demo.list_view.Device_c;
-import anh.trinh.ble_demo.list_view.ExpandableListViewAdapter;
+import anh.trinh.ble_demo.list_view.DeviceControlExpListAdapter;
 import anh.trinh.ble_demo.list_view.Zone_c;
 
 public class DeviceControlFragment extends Fragment{
 	private ExpandableListView 	lvDevControl;
-	private ExpandableListViewAdapter mAdapter;
+	private DeviceControlExpListAdapter mAdapter;
 	private ArrayList<Zone_c> 	listParent 		= new ArrayList<Zone_c>();
 	private final String 		TAG				= "DeviceControlFragment";
 	private HomeActivity        mHomeActivity   = (HomeActivity) getActivity();
@@ -57,7 +57,7 @@ public class DeviceControlFragment extends Fragment{
 		
 		Log.i(TAG, "enter process");
 		
-		mAdapter = new ExpandableListViewAdapter((HomeActivity) getActivity(), listParent);
+		mAdapter = new DeviceControlExpListAdapter((HomeActivity) getActivity(), listParent);
 		lvDevControl.setGroupIndicator(null);
 		lvDevControl.setAdapter(mAdapter);
 		

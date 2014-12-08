@@ -3,7 +3,9 @@
     android:id="@+id/TableLayout1"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical" >
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:background="@drawable/device_list_style" >
 
     <TableRow
         android:id="@+id/tableRow1"
@@ -15,7 +17,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/condition"
-            android:textColor="@color/cyan"
             android:textSize="20sp" />
     </TableRow>
 
@@ -26,56 +27,62 @@
 
         <Spinner
             android:id="@+id/mCondChoose"
-            android:layout_width="100dp"
-            android:layout_height="wrap_content" />
-		
-        <FrameLayout 
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:visibility="visible">
-	        <LinearLayout
-	            android:id="@+id/LinearLayout1"
-	            android:layout_width="match_parent"
-	            android:layout_height="wrap_content" >
-	
-	            <Spinner
-	                android:id="@+id/condDevChoose"
-	                android:layout_width="100dp"
-	                android:layout_height="wrap_content" />
-	
-	            <EditText
-	                android:id="@+id/condDevVal"
-	                android:layout_width="100dp"
-	                android:layout_height="wrap_content"
-	                android:ems="10" 
-	                android:inputType="number"/>
-	        </LinearLayout>
-	        
-	        <LinearLayout
-	            android:id="@+id/LinearLayout2"
-	            android:layout_width="match_parent"
-	            android:layout_height="wrap_content" 
-	            android:visibility="invisible">
-	
-	            <EditText
-	                android:id="@+id/startTime"
-	                android:layout_width="100dp"
-	                android:layout_height="wrap_content"
-	                android:singleLine="true"
-	                android:inputType="datetime"
-	                android:hint="@string/start" />
-	            
-	            <EditText
-	                android:id="@+id/stopTime"
-	                android:layout_width="100dp"
-	                android:layout_height="wrap_content"
-	                android:singleLine="true"
-	                android:inputType="datetime"
-	                android:hint="@string/end" />
-	
-	        </LinearLayout>
+            android:layout_weight="1" />
+
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2" >
+
+            <LinearLayout
+                android:id="@+id/llDevVal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="invisible"
+                android:weightSum="1" >
+
+                <Spinner
+                    android:id="@+id/condDevChoose"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight=".5" />
+
+                <EditText
+                    android:id="@+id/condDevVal"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight=".5"
+                    android:ems="10"
+                    android:inputType="number" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/llTimeRange"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:weightSum="1" >
+
+                <EditText
+                    android:id="@+id/startTime"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight=".5"
+                    android:hint="@string/start"
+                    android:inputType="datetime"
+                    android:singleLine="true" />
+
+                <EditText
+                    android:id="@+id/stopTime"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight=".5"
+                    android:hint="@string/end"
+                    android:inputType="datetime"
+                    android:singleLine="true" />
+            </LinearLayout>
         </FrameLayout>
-        
     </TableRow>
 
     <TableRow
@@ -88,7 +95,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/action"
-            android:textColor="@color/cyan"
             android:textSize="20sp" />
     </TableRow>
 
@@ -99,27 +105,31 @@
 
         <Spinner
             android:id="@+id/mActChoose"
-            android:layout_width="100dp"
-            android:layout_height="wrap_content" />
-        
-        <LinearLayout
-	            android:id="@+id/LinearLayout3"
-	            android:layout_width="match_parent"
-	            android:layout_height="wrap_content" >
-	
-	            <Spinner
-	                android:id="@+id/actDevChoose"
-	                android:layout_width="100dp"
-	                android:layout_height="wrap_content" />
-	
-	            <EditText
-	                android:id="@+id/actDevVal"
-	                android:layout_width="100dp"
-	                android:layout_height="wrap_content"
-	                android:ems="10"
-	                android:inputType="number" />
-	        </LinearLayout>
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
 
+        <LinearLayout
+            android:id="@+id/LinearLayout3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:weightSum="1" >
+
+            <Spinner
+                android:id="@+id/actDevChoose"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight=".5" />
+
+            <EditText
+                android:id="@+id/actDevVal"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight=".5"
+                android:ems="10"
+                android:inputType="number" />
+        </LinearLayout>
     </TableRow>
 
 </TableLayout>

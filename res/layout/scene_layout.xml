@@ -4,10 +4,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/accent_pink" >
+    android:padding="10dp"
+    android:layout_margin="15dp"
+    android:background="@color/deep_orange" >
 
     <ImageButton
-        android:id="@+id/imageButton2"
+        android:id="@+id/btnSceneSave"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
@@ -20,16 +22,15 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_centerVertical="true"
-        android:text="TextView"
-        android:textSize="18sp"
+        android:textSize="24sp"
         android:textColor="@color/white" />
 
     <ImageButton
-        android:id="@+id/imageButton1"
+        android:id="@+id/btnAddRule"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
-        android:layout_toLeftOf="@+id/imageButton2"
+        android:layout_toLeftOf="@+id/btnSceneSave"
         android:src="@android:drawable/ic_menu_edit" />
 
 </RelativeLayout>

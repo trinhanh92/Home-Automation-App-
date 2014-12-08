@@ -8,7 +8,12 @@
     <ExpandableListView
         android:id="@+id/elvScene"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" >
+        android:layout_height="match_parent"
+        android:paddingLeft="15dp"
+        android:paddingRight="15dp"
+        android:dividerHeight="4dp"
+        android:childDivider="@color/background_grey"
+        android:scrollbars="none" >
     </ExpandableListView>
 
     <Button
