@@ -37,7 +37,8 @@ import anh.trinh.ble_demo.data.DataConversion;
 import anh.trinh.ble_demo.data.DeviceInfo;
 import anh.trinh.ble_demo.data.CommandID;
 import anh.trinh.ble_demo.data.ProcessBTMsg;
-import anh.trinh.ble_demo.data.WriteSuccessFlag;
+import anh.trinh.ble_demo.data.ACKisReceived;
+import anh.trinh.ble_demo.list_view.Scene_c;
 
 public class HomeActivity extends FragmentActivity implements TabListener{
 	
@@ -60,12 +61,16 @@ public class HomeActivity extends FragmentActivity implements TabListener{
  
     private boolean 					mConnected 				= false;
     public boolean						mServerReady			= false;
-    public WriteSuccessFlag             mWriteSuccess           = new WriteSuccessFlag();
+    public ACKisReceived                mWriteSuccess           = new ACKisReceived();
     public BluetoothGattCharacteristic  mWriteCharacteristic, mNotifyCharateristic;
-    private ArrayList<BluetoothMessage> mBTMsg 					= new ArrayList<BluetoothMessage>();
+    private BluetoothMessage            mBTMsg;
     public short                        mBTMsgIndex               = 0;
     public int							mNumOfDev;
     public ArrayList<DeviceInfo>        mDevInfoList 			= new ArrayList<DeviceInfo>();
+    public int                          mNumOfActScene;
+    public int                          mNumOfInactScene;
+    public ArrayList<Scene_c>           mActSceneList           = new ArrayList<Scene_c>();
+    public ArrayList<Scene_c>           mInactSceneList         = new ArrayList<Scene_c>();
     public ProcessBTMsg            		mProcessMsg				= new ProcessBTMsg(HomeActivity.this);
 
     // Code to manage Service life cycle.
@@ -385,8 +390,7 @@ public class HomeActivity extends FragmentActivity implements TabListener{
 				
 				@Override
 				public void onFinish() {
-					// TODO Auto-generated method stub
-					showDialog("loading");
+					// TODO Get number of devices
 					BluetoothMessage msg = new BluetoothMessage();
 					msg.setType(BTMessageType.BLE_DATA);
 					msg.setIndex(mBTMsgIndex);
@@ -402,8 +406,8 @@ public class HomeActivity extends FragmentActivity implements TabListener{
 				}
 			}.start();
 			
-		//display device list after 2,5s
-		new CountDownTimer(2500, 2500) {
+		//display device list after 1,5s
+		new CountDownTimer(1500, 1500) {
 			
 			@Override
 			public void onTick(long arg0) {
@@ -419,12 +423,37 @@ public class HomeActivity extends FragmentActivity implements TabListener{
 //					for(int i = 0; i < mDevInfoList.size(); i++){
 //						Log.i(TAG,Integer.toString(mDevInfoList.get(i).getDevID()) );
 //					}
-					DeviceControlFragment mDeviceFrag = (DeviceControlFragment)getSupportFragmentManager()
-							.getFragments().get(0);
-					mDeviceFrag.updateUI(mDevInfoList);
+					
+					new Thread(new Runnable() {
+						
+						@Override
+						public void run() {
+							// TODO Auto-generated method stub
+							DeviceControlFragment mDeviceFrag = (DeviceControlFragment)getSupportFragmentManager()
+									.getFragments().get(0);
+							mDeviceFrag.updateUI(mDevInfoList);
+						}
+					}).start();
+					
+					// send request to get number of scene;
+					BluetoothMessage msg = new BluetoothMessage();
+					msg.setType(BTMessageType.BLE_DATA);
+					msg.setIndex(mBTMsgIndex);
+	            	msg.setLength((byte) 0);
+	            	msg.setCmdIdH((byte)CommandID.GET);
+	            	msg.setCmdIdL((byte)CommandID.NUM_OF_SCENES);
+	            	try {
+						mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					
+					
 				}
 			}
 		}.start();
+		
 	 }
 	 
 	 /**
@@ -440,12 +469,8 @@ public class HomeActivity extends FragmentActivity implements TabListener{
 //		for(int i = 0; i < tempBuf.length; i++){
 //			System.out.println(tempBuf[i]);
 //		}
-     	mBTMsg.add(mProcessMsg.getBLEMessage(intent));
-     	if(!mBTMsg.isEmpty()){
-     	}   	    	
+     	mBTMsg = mProcessMsg.getBLEMessage(intent);  	    	
 		mProcessMsg.processBTMessageQueue(mBTMsg);
-		mBTMsg.clear();
-		
 	 }
 	  
 	 /**

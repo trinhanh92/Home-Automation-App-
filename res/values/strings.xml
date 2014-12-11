@@ -32,5 +32,7 @@
     <string name="action">Action</string>
     <string name="start">start</string>
     <string name="end">end</string>
+    <string name="from">From</string>
+    <string name="to">To</string>
 
 </resources>

@@ -1,7 +1,9 @@
 package anh.trinh.ble_demo.data;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
+import java.nio.charset.StandardCharsets;
 
 import android.graphics.Color;
 import anh.trinh.ble_demo.R;
@@ -144,6 +146,7 @@ public class DataConversion {
 	 }
 	 
 	 /**
+	  * Convert byte array to short number
 	  * 
 	  * @param dataBuf
 	  * @return
@@ -152,14 +155,12 @@ public class DataConversion {
 		 ByteBuffer tempBuf = ByteBuffer.allocate(2);
 		 tempBuf.put(dataBuf[4]);
 		 tempBuf.put(dataBuf[5]);
-//		 short retVal;
-//		 retVal = (short) (((short) (dataBuf[4] <<8) & 0xFF00)  | (short) dataBuf[5] & 0x00FF) ;  
 		 return tempBuf.getShort(0);
 	 }
 	 
 	 /**
 	  * 
-	  * Join 2 byte number to short number
+	  * Join 2-byte number to short number
 	  * @param byteH
 	  * @param byteL
 	  * @return
@@ -169,6 +170,35 @@ public class DataConversion {
 		 tempBuf.put(byteH);
 		 tempBuf.put(byteL);
 		return tempBuf.getShort(0);
+	 }
+	 
+	 /**
+	  * Convert byte array to string
+	  * 
+	  * @param dataBuf
+	  * @return
+	  */
+	 public static String byteArr2String(byte[] dataBuf){
+		 String retString = "";
+		 try {
+			retString = new String(dataBuf,"US_ASCII");
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		 return retString;
+	 }
+	 
+	 /**
+	  * Convert string to byte array
+	  * 
+	  * @param str
+	  * @return
+	  */
+	 public static byte[] string2ByteArr(String str){
+		byte[] retBuf = str.getBytes();
+		return retBuf;
+		 
 	 }
 
 }

@@ -34,6 +34,7 @@ import anh.trinh.ble_demo.DeviceControlFragment;
 import anh.trinh.ble_demo.HomeActivity;
 import anh.trinh.ble_demo.R;
 import anh.trinh.ble_demo.list_view.Device_c;
+import anh.trinh.ble_demo.list_view.Scene_c;
 
 public class ProcessBTMsg {
 	private HomeActivity mContext;
@@ -75,9 +76,9 @@ public class ProcessBTMsg {
 			sendBuf.put(msg.getPayload());
 		}
 		characteristic.setValue(sendBuf.array());
-		
+
 		System.out.println("data send to BLE");
-		for(int i = 0; i < msg.getLength()+6; i++){
+		for (int i = 0; i < msg.getLength() + 6; i++) {
 			System.out.printf("%d ", sendBuf.array()[i]);
 		}
 		System.out.println();
@@ -102,13 +103,13 @@ public class ProcessBTMsg {
 		sendBuf.put(DataConversion.short2ByteArr(msgIndex));
 		sendBuf.put((byte) 0);
 		characteristic.setValue(sendBuf.array());
-		
+
 		System.out.println("data ACK to BLE");
-		for(int i = 0; i < sendBuf.array().length; i++){
+		for (int i = 0; i < sendBuf.array().length; i++) {
 			System.out.printf("%d ", sendBuf.array()[i]);
 		}
 		System.out.println();
-		
+
 		sendBuf.clear();
 		mContext.mBluetoothLeService.writeCharacteristic(characteristic);
 	}
@@ -122,11 +123,11 @@ public class ProcessBTMsg {
 	public BluetoothMessage parseBTMessage(byte[] msgBuf) {
 		BluetoothMessage BTMsg;
 
-		for(int i = 0; i < msgBuf.length; i++){
-			System.out.printf("%d ",msgBuf[i]);
+		for (int i = 0; i < msgBuf.length; i++) {
+			System.out.printf("%d ", msgBuf[i]);
 		}
 		System.out.println();
-		
+
 		byte msgType = msgBuf[0];
 		short msgIndex = DataConversion.byteArr2Short(msgBuf[1], msgBuf[2]);
 		if (msgType == BTMessageType.BLE_ACK) {
@@ -158,50 +159,114 @@ public class ProcessBTMsg {
 	 * 
 	 * @param msgQueue
 	 */
-	public void processBTMessageQueue(ArrayList<BluetoothMessage> msgQueue) {
-
-		int len = 0;
+	public void processBTMessageQueue(BluetoothMessage btMsg) {
 		Message handlerMsg;
-		// Get length of payload
-		
-		for (BluetoothMessage msg : msgQueue) {
-			len += msg.getLength();
-			if(msg.getType() == BTMessageType.BLE_ACK){
-				return;
-			}
+		int len = btMsg.getLength();
+		if (btMsg.getType() == BTMessageType.BLE_ACK) {
+			return;
 		}
+		// Get data payload
 		ByteBuffer dataBuf = ByteBuffer.allocate(len);
-
-		// Get data of payload
-		for (BluetoothMessage msg : msgQueue) {
-			dataBuf.put(msg.getPayload());
-		}
+		dataBuf.put(btMsg.getPayload());
 
 		// Analyze kind of massage
-		switch (msgQueue.get(0).getCmdIdL()) {
+		switch (btMsg.getCmdIdL()) {
 
 		case CommandID.NUM_OF_DEVS:
 			Log.i(TAG, "receive num of dev");
-			mContext.mNumOfDev = dataBuf.get(0);
+			mContext.mNumOfDev = btMsg.getPayload()[0];
 			handlerMsg = mContext.mMsgHandler
 					.obtainMessage(CommandID.NUM_OF_DEVS);
 			mContext.mMsgHandler.sendMessage(handlerMsg);
 			break;
 		case CommandID.DEV_WITH_INDEX:
-			// mContext.mDevInfoList = getDeviceList(dataBuf);
 			Log.i(TAG, "dev with index");
 			getDeviceList(dataBuf);
 			break;
 		case CommandID.DEV_VAL:
 			// update device value from CC
-			updateDeviceValue(msgQueue.get(0).getPayload());
+			updateDeviceValue(btMsg.getPayload());
 			break;
+		case CommandID.NUM_OF_SCENES:
+			mContext.mNumOfActScene = btMsg.getPayload()[0];
+			mContext.mNumOfActScene = btMsg.getPayload()[1];
 
+			// Request to get active scene
+			BluetoothMessage sendMsg = new BluetoothMessage();
+			sendMsg.setType(BTMessageType.BLE_DATA);
+			sendMsg.setIndex(mContext.mBTMsgIndex);
+			sendMsg.setLength((byte) 4);
+			sendMsg.setCmdIdH((byte) CommandID.GET);
+			sendMsg.setCmdIdL((byte) CommandID.ACT_SCENE_WITH_INDEX);
+			sendMsg.setPayload(DataConversion.int2ByteArr(0xFFFFFFFF));
+			try {
+				putBLEMessage(mContext.mWriteCharacteristic, sendMsg);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			// Request to get inactive scene
+			sendMsg.setType(BTMessageType.BLE_DATA);
+			sendMsg.setIndex(mContext.mBTMsgIndex);
+			sendMsg.setLength((byte) 4);
+			sendMsg.setCmdIdH((byte) CommandID.GET);
+			sendMsg.setCmdIdL((byte) CommandID.INACT_SCENE_WITH_INDEX);
+			sendMsg.setPayload(DataConversion.int2ByteArr(0xFFFFFFFF));
+			try {
+				putBLEMessage(mContext.mWriteCharacteristic, sendMsg);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			break;
+		case CommandID.ACT_SCENE_WITH_INDEX:
+			getSceneList(dataBuf, true);
+			break;
+		case CommandID.INACT_SCENE_WITH_INDEX:
+			getSceneList(dataBuf, false);
+			break;
+		case CommandID.RULE_WITH_INDEX:
+			getRuleList(dataBuf);
+			break;
 		default:
+			Log.e(TAG, "Command ID invalid");
 			break;
 		}
 		// Clear buffer
 		dataBuf.clear();
+
+	}
+
+	private void getRuleList(ByteBuffer dataBuf) {
+		String sceneName = DataConversion.byteArr2String(dataBuf.get(
+				dataBuf.array(), 0, 8).array());
+//		dataBuf.ge
+		
+
+	}
+
+	/**
+	 * Get list of scenes
+	 * 
+	 * @param dataBuf
+	 * @param isActived
+	 */
+	private void getSceneList(ByteBuffer dataBuf, boolean isActived) {
+		int numOfScene = dataBuf.array().length / 9;
+		String sceneName;
+		for (int i = 0; i < numOfScene; i += 9) {
+			sceneName = DataConversion.byteArr2String(dataBuf.get(
+					dataBuf.array(), i + 1, 8).array());
+			Scene_c newSceneObj = new Scene_c();
+			newSceneObj.setID(dataBuf.get(i));
+			newSceneObj.setName(sceneName);
+			newSceneObj.setActived(isActived);
+			if (isActived) {
+				mContext.mActSceneList.add(newSceneObj);
+			} else {
+				mContext.mInactSceneList.add(newSceneObj);
+			}
+		}
 
 	}
 

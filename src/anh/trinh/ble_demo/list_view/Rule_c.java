@@ -6,24 +6,24 @@ public class Rule_c {
 	private int mCondition;
 	private int mAction;
 	
-	private int inputDevID;
-	private short inputDevVal;
+	private int mCondDevID;
+	private short mCondDevVal;
 	
-	private int outputDevID;
-	private short outputDevVal;
+	private int mActDevID;
+	private short mActDevVal;
 	
-	private long startTime;
-	private long endTime;
+	private int startTime;
+	private int endTime;
 
 	public Rule_c() {
 		// TODO Auto-generated constructor stub
 	}
 	
-	public void setID(int ruleId){
+	public void setRuleIndex(int ruleId){
 		this.ruleId = ruleId;
 	}
 	
-	public int getID(){
+	public int getRuleIndex(){
 		return this.ruleId;
 	}
 	
@@ -43,51 +43,51 @@ public class Rule_c {
 		return this.mAction;
 	}
 	
-	public void setInputDevId(int mDevID){
-		this.inputDevID = mDevID;
+	public void setCondDevId(int mDevID){
+		this.mCondDevID = mDevID;
 	}
 	
-	public int getInputDevId(){
-		return this.inputDevID;
+	public int getCondDevId(){
+		return this.mCondDevID;
 	}
 	
-	public void setOutputDevId(int mDevID){
-		this.outputDevID = mDevID;
+	public void setActDevId(int mDevID){
+		this.mActDevID = mDevID;
 	}
 	
-	public int getOutputDevId(){
-		return this.outputDevID;
+	public int getActDevId(){
+		return this.mActDevID;
 	}
 	
-	public void setInputDevVal(short mDevVal){
-		this.inputDevVal = mDevVal;
+	public void setCondDevVal(short mDevVal){
+		this.mActDevVal = mDevVal;
 	}
 	
-	public short getInputDevVal(){
-		return this.inputDevVal;
+	public short getCondDevVal(){
+		return this.mActDevVal;
 	}
 	
-	public void setOutputDevVal(short mDevVal){
-		this.outputDevVal = mDevVal;
+	public void setActDevVal(short mDevVal){
+		this.mActDevVal = mDevVal;
 	}
 	
-	public short getOutputDevVal(){
-		return this.outputDevVal;
+	public short getActDevVal(){
+		return this.mActDevVal;
 	}
 	
-	public void setStartTime(long startTime){
+	public void setStartTime(int startTime){
 		this.startTime = startTime;
 	}
 	
-	public void setEndTime(long endTime){
+	public void setEndTime(int endTime){
 		this.endTime = endTime;
 	}
 	
-	public long getStartTime(){
+	public int getStartTime(){
 		return this.startTime;
 	}
 	
-	public long getEndTime(){
+	public int getEndTime(){
 		return this.endTime;
 	}
 	

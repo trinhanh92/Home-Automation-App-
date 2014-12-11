@@ -42,7 +42,7 @@ import anh.trinh.ble_demo.list_view.Zone_c;
 public class DeviceControlFragment extends Fragment{
 	private ExpandableListView 	lvDevControl;
 	private DeviceControlExpListAdapter mAdapter;
-	private ArrayList<Zone_c> 	listParent 		= new ArrayList<Zone_c>();
+	public ArrayList<Zone_c> 	listParent 		= new ArrayList<Zone_c>();
 	private final String 		TAG				= "DeviceControlFragment";
 	private HomeActivity        mHomeActivity   = (HomeActivity) getActivity();
 

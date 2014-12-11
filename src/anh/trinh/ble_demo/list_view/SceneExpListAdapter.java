@@ -22,16 +22,20 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
+import anh.trinh.ble_demo.DeviceControlFragment;
 import anh.trinh.ble_demo.HomeActivity;
 import anh.trinh.ble_demo.R;
 import anh.trinh.ble_demo.ScenesFragment;
+import anh.trinh.ble_demo.custom_view.DateDisplayPicker;
+import anh.trinh.ble_demo.custom_view.DeviceArrayAdapter;
+import anh.trinh.ble_demo.custom_view.TimeDisplayPicker;
 import anh.trinh.ble_demo.data.DeviceInfo;
 import anh.trinh.ble_demo.data.DeviceTypeDef;
 
 public class SceneExpListAdapter extends BaseExpandableListAdapter {
 
 	private static final String TAG = "ExpandableListView";
-	private Context mContext;
+	private HomeActivity mContext;
 	private ArrayList<Scene_c> listOfScene;
 	private ArrayList<DeviceInfo> listOfDevice;
 
@@ -41,7 +45,8 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 
 	private static final String[] listOfAction = { "SET DEV VAL" };
 
-	public SceneExpListAdapter(Context mContext, ArrayList<Scene_c> listOfScene) {
+	public SceneExpListAdapter(HomeActivity mContext,
+			ArrayList<Scene_c> listOfScene) {
 		this.mContext = mContext;
 		this.listOfScene = listOfScene;
 	}
@@ -55,7 +60,8 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 	@Override
 	public long getChildId(int groupPos, int childPos) {
 		// TODO Auto-generated method stub
-		return listOfScene.get(groupPos).getRuleWithIndex(childPos).getID();
+		return listOfScene.get(groupPos).getRuleWithIndex(childPos)
+				.getRuleIndex();
 	}
 
 	@Override
@@ -75,6 +81,11 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 		final LinearLayout llTimeRange = (LinearLayout) convertView
 				.findViewById(R.id.llTimeRange);
 
+		final TextView mTitlle1 = (TextView) convertView
+				.findViewById(R.id.tvTittle1);
+		final TextView mTittle2 = (TextView) convertView
+				.findViewById(R.id.tvTittle2);
+
 		Spinner mCondChoose = (Spinner) convertView
 				.findViewById(R.id.mCondChoose);
 		Spinner condDevChoose = (Spinner) convertView
@@ -82,9 +93,14 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 		EditText condDevVal = (EditText) convertView
 				.findViewById(R.id.condDevVal);
 
-		EditText mStartTime = (EditText) convertView
-				.findViewById(R.id.startTime);
-		EditText mEndTime = (EditText) convertView.findViewById(R.id.stopTime);
+		DateDisplayPicker mFromDate = (DateDisplayPicker) convertView
+				.findViewById(R.id.fromDate);
+		TimeDisplayPicker mFromTime = (TimeDisplayPicker) convertView
+				.findViewById(R.id.fromTime);
+		DateDisplayPicker mToDate = (DateDisplayPicker) convertView
+				.findViewById(R.id.toDate);
+		TimeDisplayPicker mToTime = (TimeDisplayPicker) convertView
+				.findViewById(R.id.toTime);
 
 		Spinner mActChoose = (Spinner) convertView
 				.findViewById(R.id.mActChoose);
@@ -98,17 +114,35 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 				android.R.layout.simple_spinner_item, listOfCond);
 		mCondAdapter
 				.setDropDownViewResource(android.R.layout.simple_list_item_single_choice);
+
 		ArrayAdapter<String> mActAdapter = new ArrayAdapter<String>(mContext,
 				android.R.layout.simple_spinner_item, listOfAction);
 		mActAdapter
 				.setDropDownViewResource(android.R.layout.simple_list_item_single_choice);
 
+		// Choose Device
+		DeviceArrayAdapter mDevAdapter = new DeviceArrayAdapter(mContext,
+				android.R.layout.simple_spinner_item, mContext.mDevInfoList);
+		mDevAdapter
+				.setDropDownViewResource(android.R.layout.simple_list_item_single_choice);
+
 		// set adapter for spinner
 		mCondChoose.setAdapter(mCondAdapter);
 		mActChoose.setAdapter(mActAdapter);
+		condDevChoose.setAdapter(mDevAdapter);
+		actDevChoose.setAdapter(mDevAdapter);
 
+		// Set selection position for spinner
 		mCondChoose.setSelection(mRuleObj.getCond());
 		mActChoose.setSelection(mRuleObj.getAction());
+
+		ScenesFragment.listOfScene.get(groupPos).getRuleWithIndex(childPos)
+				.setRuleIndex(childPos);
+		mCondChoose.setSelection(mRuleObj.getCond());
+		mActChoose.setSelection(mRuleObj.getAction());
+		actDevChoose.setSelection(findDevIndexByID(mContext.mDevInfoList,
+				mRuleObj.getActDevId()));
+		actDevVal.setText(mRuleObj.getActDevVal());
 
 		mCondChoose.setOnItemSelectedListener(new OnItemSelectedListener() {
 
@@ -122,10 +156,14 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 				if ((pos == 6) || (pos == 7)) {
 					llDevVal.setVisibility(View.INVISIBLE);
 					llTimeRange.setVisibility(View.VISIBLE);
+					mTitlle1.setText("From:");
+					mTittle2.setText("To:");
 					Log.i(TAG, "choose time");
 				} else {
 					llTimeRange.setVisibility(View.INVISIBLE);
 					llDevVal.setVisibility(View.VISIBLE);
+					mTitlle1.setText("Device");
+					mTittle2.setText("Value");
 					Log.i(TAG, "choose dev");
 				}
 
@@ -156,18 +194,16 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 		});
 
 		if (llTimeRange.getVisibility() == View.VISIBLE) {
-			mStartTime.setOnClickListener(new OnClickListener() {
+			mFromDate.setText(mRuleObj.getStartTime());
+			mFromTime.setText(mRuleObj.getStartTime());
+			mToDate.setText(mRuleObj.getEndTime());
+			mToTime.setText(mRuleObj.getEndTime());
 
-				@Override
-				public void onClick(View arg0) {
-					// TODO Auto-generated method stub
-					// DateTimeInputDialog mDateTimeInput = new
-					// DateTimeInputDialog();
-					// mDateTimeInput.show(mContext.get, "dialog");
-				}
-			});
-			mStartTime.setText(new SimpleDateFormat("yyyy/MM/dd hh:MM:ss")
-					.format(new Date().getDate()));
+		}
+		if (llDevVal.getVisibility() == View.VISIBLE) {
+			condDevChoose.setSelection(findDevIndexByID(mContext.mDevInfoList,
+					mRuleObj.getCondDevId()));
+			condDevVal.setText(mRuleObj.getCondDevVal());
 		}
 		return convertView;
 	}
@@ -248,70 +284,26 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 	 * @param scenePos
 	 */
 	private void addNewRule(int scenePos) {
-		if (getChildrenCount(scenePos) < 3) {
-			Rule_c mRule = new Rule_c();
-			mRule.setID(0);
-			listOfScene.get(scenePos).addRule(mRule);
-			Log.i("ExpandableList",
-					Integer.toString(listOfScene.get(scenePos).getNumOfRule()));
-			notifyDataSetChanged();
-		} else {
-			Log.i(TAG, "Max Num of Rule is 3");
-		}
+		Rule_c mRule = new Rule_c();
+		listOfScene.get(scenePos).addRule(mRule);
+		Log.i("ExpandableList",
+				Integer.toString(listOfScene.get(scenePos).getNumOfRule()));
+		notifyDataSetChanged();
 	}
 
-	private ArrayList<String> getListOfDeviceName(
-			ArrayList<DeviceInfo> listOfDevice) {
-		ArrayList<String> listDevName = new ArrayList<String>();
-		String mDevName;
-		for (int i = 0; i < listOfDevice.size(); i++) {
-			switch ((byte) listOfDevice.get(i).getDevID()) {
-			case DeviceTypeDef.BUTTON:
-				mDevName = "BUTTON";
-				break;
-			case DeviceTypeDef.BUZZER:
-				mDevName = "BUZZER";
-				break;
-			case DeviceTypeDef.DIMMER:
-				mDevName = "DIMMER";
-				break;
-			case DeviceTypeDef.GAS_SENSOR:
-				mDevName = "GAS SENSOR";
-				break;
-			case DeviceTypeDef.LEVEL_BULB:
-				mDevName = "LEVEL BULB";
-				break;
-			case DeviceTypeDef.LUMI_SENSOR:
-				mDevName = "LUMI SENSOR";
-				break;
-			case DeviceTypeDef.ON_OFF_BULB:
-				mDevName = "ON OFF BULB";
-				break;
-			case DeviceTypeDef.PIR_SENSOR:
-				mDevName = "PIR SENSOR";
-				break;
-			case DeviceTypeDef.RGB_LED:
-				mDevName = "RGB LED";
-				break;
-			case DeviceTypeDef.SERVO_SG90:
-				mDevName = "SERVO SG90";
-				break;
-			case DeviceTypeDef.SWITCH:
-				mDevName = "SWTICH";
-				break;
-			case DeviceTypeDef.TEMP_SENSOR:
-				mDevName = "TEMP SENSOR";
-				break;
-
-			default:
-				mDevName = "BUTTON";
-				break;
-			}
-			if(!listDevName.equals(mDevName)){
-				listDevName.add(mDevName);
+	/**
+	 * Find device index in List by device ID
+	 * 
+	 * @param listOfDev
+	 * @param devID
+	 * @return
+	 */
+	private int findDevIndexByID(ArrayList<DeviceInfo> listOfDev, int devID) {
+		for (int i = 0; i < listOfDev.size(); i++) {
+			if (listOfDev.get(i).getDevID() == devID) {
+				return i;
 			}
 		}
-		return listDevName;
-
+		return -1;
 	}
 }
