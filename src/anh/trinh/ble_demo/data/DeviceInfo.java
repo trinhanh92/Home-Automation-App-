@@ -97,9 +97,7 @@ public class DeviceInfo {
 			devName = "UNKNOWN DEVICE";
 			break;
 		}
-		devName = devName + " Z" + Byte.toString((byte) (devID >> 24)) + " N"
-				+ Byte.toString((byte) (devID >> 16)) + " EP"
-				+ Byte.toString((byte) (devID >> 8));
+		devName = devName + " (" + Integer.toHexString(devID >> 8) +")";
 		return devName;
 	}
 

@@ -138,8 +138,9 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 				.setDropDownViewResource(android.R.layout.simple_list_item_single_choice);
 
 		// Choose Device
-		DeviceArrayAdapter mDevAdapter = new DeviceArrayAdapter(mContext,
-				android.R.layout.simple_spinner_item, mContext.mDevInfoList);
+		ArrayAdapter<String> mDevAdapter = new ArrayAdapter<String>(mContext,
+				android.R.layout.simple_spinner_item,
+				getDeviceNameList(mContext.mDevInfoList));
 		mDevAdapter
 				.setDropDownViewResource(android.R.layout.simple_list_item_single_choice);
 
@@ -193,29 +194,31 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 								}
 							});
 
-					actDevChoose
-							.setOnItemSelectedListener(new OnItemSelectedListener() {
-
-								@Override
-								public void onItemSelected(AdapterView<?> arg0,
-										View arg1, int pos, long arg3) {
-									// TODO Auto-generated method stub
-									listOfScene
-											.get(groupPos)
-											.getRuleWithIndex(childPos)
-											.setActDevId(
-													mContext.mDevInfoList.get(
-															pos).getDevID());
-								}
-
-								@Override
-								public void onNothingSelected(
-										AdapterView<?> arg0) {
-									// TODO Auto-generated method stub
-
-								}
-							});
 				}
+				
+				actDevChoose
+				.setOnItemSelectedListener(new OnItemSelectedListener() {
+
+					@Override
+					public void onItemSelected(AdapterView<?> arg0,
+							View arg1, int pos, long arg3) {
+						// TODO Auto-generated method stub
+						listOfScene
+								.get(groupPos)
+								.getRuleWithIndex(childPos)
+								.setActDevId(
+										mContext.mDevInfoList.get(
+												pos).getDevID());
+					}
+
+					@Override
+					public void onNothingSelected(
+							AdapterView<?> arg0) {
+						// TODO Auto-generated method stub
+
+					}
+				});
+				
 				listOfScene.get(groupPos).getRuleWithIndex(childPos)
 						.setCond(pos);
 			}
@@ -305,7 +308,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 				});
 			}
 			if (llDevVal.getVisibility() == View.VISIBLE) {
-				condDevChoose.setSelection(findDevIndexByID(
+				condDevChoose.setSelection(getDeviceIndex(
 						mContext.mDevInfoList, mRuleObj.getCondDevId()));
 				condDevVal.setText(Integer.toString(mRuleObj.getCondDevVal()));
 			}
@@ -849,18 +852,28 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 	 * @param mDevList
 	 * @return
 	 */
-	private List<String> getDeviceNameList(ArrayList<DeviceInfo> mDevList) {
-		List<String> listDevName = null;
-		listDevName.add(" ");
-		if (mDevList.size() > 1) {
-			if (listDevName.get(0).matches(" ")) {
-				listDevName.remove(0);
-			}
-			for (int i = 0; i < mDevList.size(); i++) {
-				listDevName.add(mDevList.get(i).getName());
-			}
+	private ArrayList<String> getDeviceNameList(ArrayList<DeviceInfo> mDevList) {
+		ArrayList<String> listDevName = new ArrayList<String>();
+		for (int i = 0; i < mDevList.size(); i++) {
+			listDevName.add(mDevList.get(i).getName());
 		}
 		return listDevName;
 
+	}
+
+	/**
+	 * Get index of device in List with device ID
+	 * 
+	 * @param mDevList
+	 * @param devID
+	 * @return
+	 */
+	private int getDeviceIndex(ArrayList<DeviceInfo> mDevList, int devID) {
+		for (int i = 0; i < mDevList.size(); i++) {
+			if (mDevList.get(i).getDevID() == devID) {
+				return i;
+			}
+		}
+		return -1;
 	}
 }
