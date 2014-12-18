@@ -22,7 +22,7 @@ public class ScenesFragment extends Fragment {
 	private Button btnAddScene;
 	private ExpandableListView mSceneExpList; 
 	private SceneExpListAdapter mAdapter;
-	public static ArrayList<Scene_c> listOfScene = new ArrayList<Scene_c>();
+	public ArrayList<Scene_c> listOfScene = new ArrayList<Scene_c>();
 	
 	 @Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -32,7 +32,6 @@ public class ScenesFragment extends Fragment {
 		
 		btnAddScene = (Button) rootView.findViewById(R.id.btnAddScene);
 		mSceneExpList = (ExpandableListView) rootView.findViewById(R.id.elvScene);
-				
 		mAdapter = new SceneExpListAdapter((HomeActivity)getActivity(), listOfScene);
 		mSceneExpList.setAdapter(mAdapter);
 		mSceneExpList.setGroupIndicator(null);
@@ -62,20 +61,41 @@ public class ScenesFragment extends Fragment {
 							mScene.setName(sceneName);
 							listOfScene.add(mScene);
 							mAdapter.notifyDataSetChanged();
+							Log.i("Scene Fragment", "update " + listOfScene.size());
 						}
 					}
 				});
-//				mBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-//					
-//					@Override
-//					public void onClick(DialogInterface dialog, int which) {
-//						// TODO Auto-generated method stub
-//					}
-//				});
+				mBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+					
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+						// TODO Auto-generated method stub
+						dialog.dismiss();
+					}
+				});
 				mBuilder.show();
 			}
 		});
 		
 		return rootView;
 	}
+	 
+	 public void updateSceneUI(ArrayList<Scene_c> listOfScene){
+		 this.listOfScene.clear();
+		 this.listOfScene.addAll(listOfScene);
+//		 this.listOfScene = listOfScene;
+//		 Log.i("Scene Fragment", "update " + this.listOfScene.get(0).getName());
+		 if(!this.listOfScene.isEmpty()){
+			 mAdapter.notifyDataSetChanged();
+			 
+			for(int i = 0 ; i < listOfScene.size(); i++){
+				if(listOfScene.get(i).getActived() == true){
+					mSceneExpList.expandGroup(i);
+				}
+				else{
+					mSceneExpList.collapseGroup(i);
+				}
+			}
+		 }
+	 }
 }

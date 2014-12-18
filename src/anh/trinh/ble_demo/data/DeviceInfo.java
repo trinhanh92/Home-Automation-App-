@@ -1,61 +1,61 @@
-
 package anh.trinh.ble_demo.data;
 
+import android.R.integer;
 import anh.trinh.ble_demo.R;
 
 /**
  * @version 1.0
  * @author Anh Trinh
  * 
- *
+ * 
  */
 
 public class DeviceInfo {
-	
+
 	private int devIdx;
 	private int devID;
 	private short devVal;
-	
+
 	public DeviceInfo() {
 		// TODO Auto-generated constructor stub
 	}
-	
-	public DeviceInfo(int devIdx, int devID, short devVal){
+
+	public DeviceInfo(int devIdx, int devID, short devVal) {
 		this.devIdx = devIdx;
-		this.devID 	= devID;
+		this.devID = devID;
 		this.devVal = devVal;
 	}
-	
+
 	/**
 	 * Set device index value
 	 * 
 	 * @param devIdx
 	 */
-	public void setDevIdx(int devIdx){
+	public void setDevIdx(int devIdx) {
 		this.devIdx = devIdx;
 	}
-	
+
 	/**
 	 * Get device index value
 	 * 
 	 * @return devIdx
 	 */
-	public int getDevIdx(){
+	public int getDevIdx() {
 		return devIdx;
 	}
-	
-	public void setDevID(int devID){
+
+	public void setDevID(int devID) {
 		this.devID = devID;
 	}
-	
-	public int getDevID(){
+
+	public int getDevID() {
 		return devID;
 	}
-	
-	public String getName(){
+
+	public String getName() {
 		String devName;
-		switch ((byte)devID) {
-		
+		switch ((byte) devID) {
+
 		case DeviceTypeDef.BUTTON:
 			devName = "BUTTON";
 			break;
@@ -97,16 +97,18 @@ public class DeviceInfo {
 			devName = "UNKNOWN DEVICE";
 			break;
 		}
+		devName = devName + " Z" + Byte.toString((byte) (devID >> 24)) + " N"
+				+ Byte.toString((byte) (devID >> 16)) + " EP"
+				+ Byte.toString((byte) (devID >> 8));
 		return devName;
 	}
-	
-	public void setDevVal(short devVal){
+
+	public void setDevVal(short devVal) {
 		this.devVal = devVal;
 	}
-	
-	public short getDevVal(){
+
+	public short getDevVal() {
 		return devVal;
 	}
-	
 
 }

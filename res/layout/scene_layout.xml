@@ -9,12 +9,13 @@
     android:background="@color/deep_orange" >
 
     <ImageButton
-        android:id="@+id/btnSceneSave"
+        android:id="@+id/btnSceneMenu"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
         android:layout_centerVertical="true"
-        android:src="@android:drawable/ic_menu_save" />
+        android:background="@drawable/btn_menu_selector"
+        android:src="@drawable/btn_menu" />
 
     <TextView
         android:id="@+id/sceneName"
@@ -25,12 +26,20 @@
         android:textSize="24sp"
         android:textColor="@color/white" />
 
-    <ImageButton
+    <!-- <ImageButton
         android:id="@+id/btnAddRule"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
         android:layout_toLeftOf="@+id/btnSceneSave"
-        android:src="@android:drawable/ic_menu_edit" />
+        android:src="@android:drawable/ic_menu_edit" /> -->
+
+    <CheckBox
+        android:id="@+id/isActive"
+        android:layout_marginRight="5dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_toLeftOf="@+id/btnSceneMenu"/>
 
 </RelativeLayout>

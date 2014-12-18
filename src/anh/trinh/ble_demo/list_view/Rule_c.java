@@ -12,9 +12,14 @@ public class Rule_c {
 	private int mActDevID;
 	private short mActDevVal;
 	
+	private int startDateTime;
+	private int startDate;
 	private int startTime;
+	
+	private int endDateTime;
+	private int endDate;
 	private int endTime;
-
+	
 	public Rule_c() {
 		// TODO Auto-generated constructor stub
 	}
@@ -60,11 +65,11 @@ public class Rule_c {
 	}
 	
 	public void setCondDevVal(short mDevVal){
-		this.mActDevVal = mDevVal;
+		this.mCondDevVal = mDevVal;
 	}
 	
 	public short getCondDevVal(){
-		return this.mActDevVal;
+		return this.mCondDevVal;
 	}
 	
 	public void setActDevVal(short mDevVal){
@@ -75,20 +80,54 @@ public class Rule_c {
 		return this.mActDevVal;
 	}
 	
-	public void setStartTime(int startTime){
-		this.startTime = startTime;
+	public void setStartDateTime(int startTime){
+		this.startDateTime = startTime;
+		this.startDate = (startTime >> 16 ) & 0xffff;
+		this.startTime = startTime & 0xffff;
 	}
 	
-	public void setEndTime(int endTime){
-		this.endTime = endTime;
+	public void setStartDate(int startDate){
+		this.startDate = startDate << 16;
+	}
+	
+	public void setStartTime(int time){
+		this.startTime = time;
+	}
+	
+	public void setEndDateTime(int endTime){
+		this.endDateTime = endTime;
+		this.endDate = (endTime >> 16 ) & 0xffff;
+		this.endTime = endTime & 0xffff;
+	}
+	
+	public void setEndDate(int date){
+		this.endDate = date << 16;
+	}
+	
+	public void setEndTime(int time){
+		this.endTime  = time;
+	}
+	public int getStartDateTime(){
+		return this.startDateTime = this.startDate << 16 | this.startTime;
+	}
+	
+	public int getStartDate(){
+		return this.startDate;
 	}
 	
 	public int getStartTime(){
 		return this.startTime;
 	}
 	
+	public int getEndDateTime(){
+		return this.endDateTime = this.endDate << 16 | this.endTime;
+	}
+	
+	public int getEndDate(){
+		return this.endDate;
+	}
+	
 	public int getEndTime(){
 		return this.endTime;
 	}
-	
 }

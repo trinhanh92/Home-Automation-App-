@@ -88,7 +88,7 @@
                 android:layout_height="wrap_content"
                 android:weightSum="1" android:baselineAligned="false">
 
-                <anh.trinh.ble_demo.custom_view.DateDisplayPicker 
+                <TextView
                     android:id="@+id/fromDate"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -96,7 +96,7 @@
                     style="@android:style/Widget.Holo.Spinner"/>
                 
                 
-                <anh.trinh.ble_demo.custom_view.TimeDisplayPicker 
+                <TextView
                     android:id="@+id/fromTime"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -104,14 +104,14 @@
                     style="@android:style/Widget.Holo.Spinner"/>
 
 
-                <anh.trinh.ble_demo.custom_view.DateDisplayPicker 
+                <TextView
                     android:id="@+id/toDate"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="0.32"
                     style="@android:style/Widget.Holo.Spinner"/>
                 
-                <anh.trinh.ble_demo.custom_view.TimeDisplayPicker 
+                <TextView
                     android:id="@+id/toTime"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"

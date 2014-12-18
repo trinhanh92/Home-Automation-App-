@@ -22,23 +22,30 @@ package anh.trinh.ble_demo.data;
  **********************************************************************************************/
 
 import java.nio.ByteBuffer;
+import java.text.Format;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Formatter;
 
+import javax.xml.transform.Templates;
+
+import android.R.integer;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.content.Intent;
+import android.os.Handler;
+import android.os.Handler.Callback;
 import android.os.Message;
 import android.util.Log;
 import anh.trinh.ble_demo.BluetoothLeService;
 import anh.trinh.ble_demo.DeviceControlFragment;
 import anh.trinh.ble_demo.HomeActivity;
-import anh.trinh.ble_demo.R;
-import anh.trinh.ble_demo.list_view.Device_c;
+import anh.trinh.ble_demo.list_view.Rule_c;
 import anh.trinh.ble_demo.list_view.Scene_c;
 
 public class ProcessBTMsg {
 	private HomeActivity mContext;
 	private final static String TAG = "ProcessMessage";
+	private final static int BLE_WRITE_DATA = 0;
+	private final static int BLE_WRITE_ACK = 1;
 
 	public ProcessBTMsg(HomeActivity mContext) {
 		this.mContext = mContext;
@@ -52,6 +59,11 @@ public class ProcessBTMsg {
 	 */
 	public BluetoothMessage getBLEMessage(Intent intent) {
 		byte[] recBuf = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
+//		for(int i = 0; i < recBuf.length; i++){
+//			System.out.print(recBuf[i]);
+//		}
+//		System.out.println();
+		
 		BluetoothMessage msg = parseBTMessage(recBuf);
 		return msg;
 
@@ -75,19 +87,24 @@ public class ProcessBTMsg {
 		if (msg.getLength() != 0) {
 			sendBuf.put(msg.getPayload());
 		}
+
 		characteristic.setValue(sendBuf.array());
 
-		System.out.println("data send to BLE");
-		for (int i = 0; i < msg.getLength() + 6; i++) {
-			System.out.printf("%d ", sendBuf.array()[i]);
-		}
-		System.out.println();
+//		System.out.println("data send to BLE");
+//		for (int i = 0; i < msg.getLength() + 6; i++) {
+//			System.out.printf("%d ", sendBuf.array()[i]);
+//		}
+//		System.out.println();
 		sendBuf.clear();
+
+		mContext.mBTMsgIndex++;
 		synchronized (mContext.mWriteSuccess) {
-			mContext.mWriteSuccess.wait(100);
+			if (!mContext.mWrited) {
+				mContext.mWriteSuccess.wait(100);
+			}
 		}
 		mContext.mBluetoothLeService.writeCharacteristic(characteristic);
-		mContext.mBTMsgIndex++;
+		mContext.mWrited = false;
 	}
 
 	/**
@@ -104,14 +121,14 @@ public class ProcessBTMsg {
 		sendBuf.put((byte) 0);
 		characteristic.setValue(sendBuf.array());
 
-		System.out.println("data ACK to BLE");
-		for (int i = 0; i < sendBuf.array().length; i++) {
-			System.out.printf("%d ", sendBuf.array()[i]);
-		}
-		System.out.println();
-
+//		System.out.println("data ACK to BLE");
+//		for (int i = 0; i < sendBuf.array().length; i++) {
+//			System.out.printf("%d ", sendBuf.array()[i]);
+//		}
+//		System.out.println();
 		sendBuf.clear();
 		mContext.mBluetoothLeService.writeCharacteristic(characteristic);
+		mContext.mWrited = false;
 	}
 
 	/**
@@ -122,12 +139,6 @@ public class ProcessBTMsg {
 	 */
 	public BluetoothMessage parseBTMessage(byte[] msgBuf) {
 		BluetoothMessage BTMsg;
-
-		for (int i = 0; i < msgBuf.length; i++) {
-			System.out.printf("%d ", msgBuf[i]);
-		}
-		System.out.println();
-
 		byte msgType = msgBuf[0];
 		short msgIndex = DataConversion.byteArr2Short(msgBuf[1], msgBuf[2]);
 		if (msgType == BTMessageType.BLE_ACK) {
@@ -138,7 +149,7 @@ public class ProcessBTMsg {
 			BTMsg.setLength(msgLen);
 
 		} else {
-			sendBLEMessageACK(mContext.mWriteCharacteristic, msgIndex);
+			// sendBLEMessageACK(mContext.mWriteCharacteristic, msgIndex);
 			byte msgLen = msgBuf[3];
 			byte cmdIdH = msgBuf[4];
 			byte cmdIdL = msgBuf[5];
@@ -159,7 +170,7 @@ public class ProcessBTMsg {
 	 * 
 	 * @param msgQueue
 	 */
-	public void processBTMessageQueue(BluetoothMessage btMsg) {
+	public void processBTMessage(BluetoothMessage btMsg) {
 		Message handlerMsg;
 		int len = btMsg.getLength();
 		if (btMsg.getType() == BTMessageType.BLE_ACK) {
@@ -189,41 +200,17 @@ public class ProcessBTMsg {
 			break;
 		case CommandID.NUM_OF_SCENES:
 			mContext.mNumOfActScene = btMsg.getPayload()[0];
-			mContext.mNumOfActScene = btMsg.getPayload()[1];
+			mContext.mNumOfInactScene = btMsg.getPayload()[1];
+			handlerMsg = mContext.mMsgHandler
+					.obtainMessage(CommandID.NUM_OF_SCENES);
+			mContext.mMsgHandler.sendMessage(handlerMsg);
 
-			// Request to get active scene
-			BluetoothMessage sendMsg = new BluetoothMessage();
-			sendMsg.setType(BTMessageType.BLE_DATA);
-			sendMsg.setIndex(mContext.mBTMsgIndex);
-			sendMsg.setLength((byte) 4);
-			sendMsg.setCmdIdH((byte) CommandID.GET);
-			sendMsg.setCmdIdL((byte) CommandID.ACT_SCENE_WITH_INDEX);
-			sendMsg.setPayload(DataConversion.int2ByteArr(0xFFFFFFFF));
-			try {
-				putBLEMessage(mContext.mWriteCharacteristic, sendMsg);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			// Request to get inactive scene
-			sendMsg.setType(BTMessageType.BLE_DATA);
-			sendMsg.setIndex(mContext.mBTMsgIndex);
-			sendMsg.setLength((byte) 4);
-			sendMsg.setCmdIdH((byte) CommandID.GET);
-			sendMsg.setCmdIdL((byte) CommandID.INACT_SCENE_WITH_INDEX);
-			sendMsg.setPayload(DataConversion.int2ByteArr(0xFFFFFFFF));
-			try {
-				putBLEMessage(mContext.mWriteCharacteristic, sendMsg);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
 			break;
 		case CommandID.ACT_SCENE_WITH_INDEX:
-			getSceneList(dataBuf, true);
+			getSceneList(btMsg.getPayload(), true);
 			break;
 		case CommandID.INACT_SCENE_WITH_INDEX:
-			getSceneList(dataBuf, false);
+			getSceneList(dataBuf.array(), false);
 			break;
 		case CommandID.RULE_WITH_INDEX:
 			getRuleList(dataBuf);
@@ -237,11 +224,41 @@ public class ProcessBTMsg {
 
 	}
 
+
+	/**
+	 * Get rule list
+	 * 
+	 */
+
 	private void getRuleList(ByteBuffer dataBuf) {
-		String sceneName = DataConversion.byteArr2String(dataBuf.get(
-				dataBuf.array(), 0, 8).array());
-//		dataBuf.ge
-		
+		String sceneName = new String(DataConversion.getBytesFromArray(0, 8,
+				dataBuf.array()));
+		int ruleIndex = dataBuf.getInt(8);
+		byte condition = dataBuf.get(11);
+		int timeStart = dataBuf.getInt(12);
+		int timeStop = dataBuf.getInt(16);
+		int condDevID = dataBuf.getInt(12);
+		short condDevVal = dataBuf.getShort(16);
+		byte action = dataBuf.get(20);
+		int actDevID = dataBuf.getInt(21);
+		short actDevVal = dataBuf.getShort(25);
+
+		for (int i = 0; i < mContext.mActSceneList.size(); i++) {
+			if (sceneName.matches(mContext.mActSceneList.get(i).getName())) {
+				Rule_c mNewRule = new Rule_c();
+				mNewRule.setRuleIndex(ruleIndex);
+				mNewRule.setCond(condition);
+				mNewRule.setActDevId(condDevID);
+				mNewRule.setActDevVal(condDevVal);
+				mNewRule.setAction(action);
+				mNewRule.setStartDateTime(timeStart);
+				mNewRule.setEndDateTime(timeStop);
+				mNewRule.setActDevId(actDevID);
+				mNewRule.setActDevVal(actDevVal);
+				mContext.mActSceneList.get(i).addRule(mNewRule);
+				break;
+			}
+		}
 
 	}
 
@@ -251,162 +268,49 @@ public class ProcessBTMsg {
 	 * @param dataBuf
 	 * @param isActived
 	 */
-	private void getSceneList(ByteBuffer dataBuf, boolean isActived) {
-		int numOfScene = dataBuf.array().length / 9;
-		String sceneName;
+	private void getSceneList(byte[] dataBuf, boolean isActived) {
+		int numOfScene = dataBuf.length / 9;
+		String sceneName = "";
+		int sceneIndex;
 		for (int i = 0; i < numOfScene; i += 9) {
-			sceneName = DataConversion.byteArr2String(dataBuf.get(
-					dataBuf.array(), i + 1, 8).array());
+			sceneIndex = dataBuf[i];
+			sceneName = new String(DataConversion
+					.getBytesFromArray(1, 8, dataBuf));
 			Scene_c newSceneObj = new Scene_c();
-			newSceneObj.setID(dataBuf.get(i));
+			newSceneObj.setIndex(sceneIndex);
 			newSceneObj.setName(sceneName);
+			Log.i(TAG, sceneName);
 			newSceneObj.setActived(isActived);
-			if (isActived) {
-				mContext.mActSceneList.add(newSceneObj);
-			} else {
-				mContext.mInactSceneList.add(newSceneObj);
-			}
+			mContext.mActSceneList.add(newSceneObj);
 		}
 
 	}
 
+
 	/**
-	 * Get List of Devices from payload of Message queue
+	 * Get devList
 	 * 
-	 * @param dataBuf
-	 * @return mListOfDev
 	 */
 	public ArrayList<DeviceInfo> getDeviceList(ByteBuffer dataBuf) {
-		ArrayList<DeviceInfo> mListOfDev = new ArrayList<DeviceInfo>();
-		DeviceInfo mDevice = null;
-		ByteBuffer devIdx = null;
-		ByteBuffer devID = null;
-		ByteBuffer devVal = null;
-		// Parse payload content device information to List of device object
-		// for(int i = 0; i < 40; i++){
-		for (int i = 0; i < dataBuf.array().length; i++) {
-			System.out.println(dataBuf.array()[i]);
-			switch (i % 10) {
-			case 0:
-				mDevice = new DeviceInfo();
-				devIdx = ByteBuffer.allocate(4);
-				devIdx.put(dataBuf.get(i));
-				break;
-			case 1:
-			case 2:
-				devIdx.put(dataBuf.get(i));
-				break;
-			case 3:
-				devIdx.put(dataBuf.get(i));
-				mDevice.setDevIdx(devIdx.getInt(0));
-				devIdx.clear();
-				break;
-			case 4:
-				devID = ByteBuffer.allocate(4);
-				devID.put(dataBuf.get(i));
-				break;
-			case 5:
-			case 6:
-				devID.put(dataBuf.get(i));
-				break;
-			case 7:
-				devID.put(dataBuf.get(i));
-				mDevice.setDevID(devID.getInt(0));
-				devID.clear();
-				break;
-			case 8:
-				devVal = ByteBuffer.allocate(2);
-				devVal.put(dataBuf.get(i));
-				break;
-			case 9:
-				devVal.put(dataBuf.get(i));
-				mDevice.setDevVal(devVal.getShort(0));
-				devVal.clear();
-				if (false == isDeviceExist(mContext.mDevInfoList,
-						mDevice.getDevID())) {
-					mContext.mDevInfoList.add(mDevice);
-				}
-				mDevice = null;
-				break;
-			default:
-				Log.i("DataInfo", "error");
-				break;
-			}
+		ArrayList<DeviceInfo> mDevList = null;
+		int devIndex;
+		int devID;
+		short devVal;
+		for (int i = 0; i < dataBuf.capacity() / 10; i += 10) {
+			devIndex = dataBuf.getInt(i);
+			devID = dataBuf.getInt(i + 4);
+			devVal = dataBuf.getShort(i + 8);
+			DeviceInfo newDev = new DeviceInfo();
+			newDev.setDevIdx(devIndex);
+			newDev.setDevID(devID);
+			newDev.setDevVal(devVal);
+			mContext.mDevInfoList.add(newDev);
+
 		}
-		return mListOfDev;
-	}
-
-	/**
-	 * Create Message for testing in Mobile
-	 * 
-	 */
-	public ArrayList<BluetoothMessage> createMessageQueue() {
-		ArrayList<BluetoothMessage> mMsgList = new ArrayList<BluetoothMessage>();
-		BluetoothMessage mBLEMsg;
-		byte[] msgArray = new byte[43];
-
-		msgArray[0] = 40;
-		msgArray[1] = CommandID.SET;
-		msgArray[2] = CommandID.NUM_OF_DEVS;
-
-		// LEVEL BULB
-		msgArray[3] = 0x00; // device index = 0
-		msgArray[4] = 0x00;
-		msgArray[5] = 0x00;
-		msgArray[6] = 0x00;
-
-		msgArray[7] = 0x00; // zone ID = 0
-		msgArray[8] = 0x00; // node ID = 0
-		msgArray[9] = 0x00; // endpoint ID = 0
-		msgArray[10] = DeviceTypeDef.LEVEL_BULB; // Device ID = LEVEL BULB
-		msgArray[11] = 0x02; // Device Value;
-		msgArray[12] = 0x00; //
-
-		// DIMMER
-		msgArray[13] = 0x00; // device index = 1
-		msgArray[14] = 0x00;
-		msgArray[15] = 0x00;
-		msgArray[16] = 0x01;
-
-		msgArray[17] = 0x01; // zone ID = 1
-		msgArray[18] = 0x00; // node ID = 0
-		msgArray[19] = 0x00; // endpoint ID = 0
-		msgArray[20] = DeviceTypeDef.DIMMER; // Device ID = DIMMER
-		msgArray[21] = 0x02;
-		msgArray[22] = 0x00;
-
-		// TEMP SENSOR
-		msgArray[23] = 0x00; // device index = 2
-		msgArray[24] = 0x00;
-		msgArray[25] = 0x00;
-		msgArray[26] = 0x02;
-
-		msgArray[27] = 0x00; // zone ID = 0
-		msgArray[28] = 0x00; // node ID = 0
-		msgArray[29] = 0x00; // endpoint ID = 0
-		msgArray[30] = DeviceTypeDef.PIR_SENSOR; // Device ID = TEMP SENSOR
-		msgArray[31] = 0x20; // Device Value
-		msgArray[32] = 0x13;
-
-		// BUTTON
-		msgArray[33] = 0x00; // device index = 3
-		msgArray[34] = 0x00;
-		msgArray[35] = 0x00;
-		msgArray[36] = 0x03;
-
-		msgArray[37] = 0x01; // zone ID = 1
-		msgArray[38] = 0x00; // node ID = 0
-		msgArray[39] = 0x00; // endpoint ID = 0
-		msgArray[40] = DeviceTypeDef.BUTTON; // Device ID = BUTTON
-		msgArray[41] = 0x00; // Device Value
-		msgArray[42] = 0x01;
-
-		mBLEMsg = parseBTMessage(msgArray);
-		mMsgList.add(mBLEMsg);
-
-		return mMsgList;
+		return mDevList;
 
 	}
+
 
 	/**
 	 * Search device exist in device List by ID
@@ -430,8 +334,14 @@ public class ProcessBTMsg {
 	 * @param payLoad
 	 */
 	private void updateDeviceValue(byte[] payLoad) {
-		int mDevID = DataConversion.byteArr2Int(payLoad);
-		short mDevVal = DataConversion.byteArr2Short(payLoad);
+		// int mDevID = DataConversion.byteArr2Int(payLoad);
+		// short mDevVal = DataConversion.byteArr2Short(payLoad);
+		// get device value version 2
+		ByteBuffer dataBuf = ByteBuffer.allocate(payLoad.length);
+		dataBuf.put(payLoad);
+		int mDevID = dataBuf.getInt(0);
+		short mDevVal = dataBuf.getShort(4);
+		dataBuf.clear();
 
 		for (int i = 0; i < mContext.mDevInfoList.size(); i++) {
 			if (mContext.mDevInfoList.get(i).getDevID() == mDevID) {

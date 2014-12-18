@@ -55,6 +55,8 @@ public class TimeDisplayPicker extends TextView implements OnTimeSetListener {
 		TimePickerDialog tp = new TimePickerDialog(mContext, this,
 				c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE),
 				DateFormat.is24HourFormat(mContext));
+		tp.setCancelable(true);
+		tp.setCanceledOnTouchOutside(true);
 		tp.show();
 	}
 

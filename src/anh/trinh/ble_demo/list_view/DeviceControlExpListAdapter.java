@@ -175,10 +175,11 @@ public class DeviceControlExpListAdapter extends BaseExpandableListAdapter {
 				break;
 				
 			default:
-				convertView = LayoutInflater.from(mContext).inflate(R.layout.switch_item, null);
+				convertView = LayoutInflater.from(mContext).inflate(R.layout.sensor_dev, null);
 				mDevViewHolder.mDevName = (TextView)convertView.findViewById(R.id.devName);
 				mDevViewHolder.mDevImg = (ImageView)convertView.findViewById(R.id.devIcon);
-				mDevViewHolder.mOnOff = (ToggleButton)convertView.findViewById(R.id.toggleVal);
+				mDevViewHolder.mDevVal = (TextView)convertView.findViewById(R.id.devVal);
+				mDevViewHolder.mDevType = (TextView) convertView.findViewById(R.id.tvInOut);
 				break;
 			}
 			convertView.setTag(mDevViewHolder);
@@ -255,10 +256,11 @@ public class DeviceControlExpListAdapter extends BaseExpandableListAdapter {
 					break;
 					
 				default:
-					convertView = LayoutInflater.from(mContext).inflate(R.layout.switch_item, null);
+					convertView = LayoutInflater.from(mContext).inflate(R.layout.sensor_dev, null);
 					mDevViewHolder.mDevName = (TextView)convertView.findViewById(R.id.devName);
 					mDevViewHolder.mDevImg = (ImageView)convertView.findViewById(R.id.devIcon);
-					mDevViewHolder.mOnOff = (ToggleButton)convertView.findViewById(R.id.toggleVal);
+					mDevViewHolder.mDevVal = (TextView)convertView.findViewById(R.id.devVal);
+					mDevViewHolder.mDevType = (TextView) convertView.findViewById(R.id.tvInOut);
 					break;
 				}
 				convertView.setTag(mDevViewHolder);
@@ -559,6 +561,8 @@ public class DeviceControlExpListAdapter extends BaseExpandableListAdapter {
 			break;
 		default:
 			mDevViewHolder.mDevImg.setImageResource(R.drawable.inknon);
+			mDevViewHolder.mDevName.setText("Unknown Device");
+			mDevViewHolder.mDevVal.setText(String.valueOf(devVal));
 			break;
 		}
 		mDevViewHolder.mDevName.setText(childObj.getName());

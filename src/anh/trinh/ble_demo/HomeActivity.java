@@ -1,10 +1,13 @@
 package anh.trinh.ble_demo;
 
 import java.io.ObjectOutputStream.PutField;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -37,136 +40,145 @@ import anh.trinh.ble_demo.data.DataConversion;
 import anh.trinh.ble_demo.data.DeviceInfo;
 import anh.trinh.ble_demo.data.CommandID;
 import anh.trinh.ble_demo.data.ProcessBTMsg;
-import anh.trinh.ble_demo.data.ACKisReceived;
 import anh.trinh.ble_demo.list_view.Scene_c;
+import anh.trinh.ble_demo.thread_sync.ACKisReceived;
+import anh.trinh.ble_demo.thread_sync.BLEWriteThread;
+import anh.trinh.ble_demo.thread_sync.MonitorObject;
 
-public class HomeActivity extends FragmentActivity implements TabListener{
-	
-	
+public class HomeActivity extends FragmentActivity implements TabListener {
+
 	private final static String TAG = HomeActivity.class.getSimpleName();
 
-    public static final String			EXTRAS_DEVICE_NAME 		= "DEVICE_NAME";
-    public static final String			EXTRAS_DEVICE_ADDRESS	= "DEVICE_ADDRESS";
-    public static final int				TIMEOUT_REC_BLE_MSG		= 2000;
-    private TextView 					mConnectionState;
-    private String 						mDeviceName;
-    private String 						mDeviceAddress;
-    private ViewPager 					viewPager;
-    private TabsPagerAdapter			mPagerAdapter;
-    private ActionBar					actionBar;
-    //Tab titles
-    private String[]					actionTabs				= {"Device Control", "Scenes"};
-    
-    public BluetoothLeService 			mBluetoothLeService;
- 
-    private boolean 					mConnected 				= false;
-    public boolean						mServerReady			= false;
-    public ACKisReceived                mWriteSuccess           = new ACKisReceived();
-    public BluetoothGattCharacteristic  mWriteCharacteristic, mNotifyCharateristic;
-    private BluetoothMessage            mBTMsg;
-    public short                        mBTMsgIndex               = 0;
-    public int							mNumOfDev;
-    public ArrayList<DeviceInfo>        mDevInfoList 			= new ArrayList<DeviceInfo>();
-    public int                          mNumOfActScene;
-    public int                          mNumOfInactScene;
-    public ArrayList<Scene_c>           mActSceneList           = new ArrayList<Scene_c>();
-    public ArrayList<Scene_c>           mInactSceneList         = new ArrayList<Scene_c>();
-    public ProcessBTMsg            		mProcessMsg				= new ProcessBTMsg(HomeActivity.this);
+	public static final String EXTRAS_DEVICE_NAME = "DEVICE_NAME";
+	public static final String EXTRAS_DEVICE_ADDRESS = "DEVICE_ADDRESS";
+	public static final int TIMEOUT_REC_BLE_MSG = 2000;
+	private TextView mConnectionState;
+	private String mDeviceName;
+	private String mDeviceAddress;
+	private ViewPager viewPager;
+	private TabsPagerAdapter mPagerAdapter;
+	private ActionBar actionBar;
+	// Tab titles
+	private String[] actionTabs = { "Device Control", "Scenes" };
 
-    // Code to manage Service life cycle.
-    private final ServiceConnection mServiceConnection = new ServiceConnection() {
+	public BluetoothLeService mBluetoothLeService;
 
-        @Override
-        public void onServiceConnected(ComponentName componentName, IBinder service) {
-            mBluetoothLeService = ((BluetoothLeService.LocalBinder) service).getService();
-            if (!mBluetoothLeService.initialize()) {
-                Log.e(TAG, "Unable to initialize Bluetooth");
-                finish();
-            }
-            // Automatically connects to the device upon successful start-up initialization.
-            mBluetoothLeService.connect(mDeviceAddress);
-        }
+	private boolean mConnected = false;
+	public boolean mServerReady = false;
+	public MonitorObject mWriteSuccess = new MonitorObject();
+	public boolean       mWrited = true;
+	public BluetoothGattCharacteristic mWriteCharacteristic,
+			mNotifyCharateristic;
+	private BluetoothMessage mBTMsg;
+	public short mBTMsgIndex = 0;
+	public int mNumOfDev;
+	public ArrayList<DeviceInfo> mDevInfoList = new ArrayList<DeviceInfo>();
+	public int mNumOfActScene;
+	public int mNumOfInactScene;
+	public ArrayList<Scene_c> mActSceneList = new ArrayList<Scene_c>();
+	public ProcessBTMsg mProcessMsg = new ProcessBTMsg(HomeActivity.this);
 
-        @Override
-        public void onServiceDisconnected(ComponentName componentName) {
-            mBluetoothLeService = null;
-        }
-    };
+	// Code to manage Service life cycle.
+	private final ServiceConnection mServiceConnection = new ServiceConnection() {
 
-    // Handles various events fired by the Service.
-    // ACTION_GATT_CONNECTED: connected to a GATT server.
-    // ACTION_GATT_DISCONNECTED: disconnected from a GATT server.
-    // ACTION_GATT_SERVICES_DISCOVERED: discovered GATT services.
-    // ACTION_DATA_AVAILABLE: received data from the device.  This can be a result of read
-    //                        or notification operations.
-    private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            final String action = intent.getAction();
-            if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(action)) {
-                mConnected = true;
-                invalidateOptionsMenu();
-                Log.i(TAG, "BLE Connected");
-            } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
-                mConnected = false;
-                invalidateOptionsMenu();
-                Log.i(TAG, "BLE Disconnected");
-                showDialog("Server Device Disconnected");
-                finish();
-            } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)){
-            	//get Server's data
-               getServerDeviceData();
-            } else if (BluetoothLeService.ACTION_DATA_NOTIFY.equals(action)){
-            	Log.i(TAG,"new data indicate");
-            	mBluetoothLeService.readCharacteristic(mNotifyCharateristic);
-//            	receiveBTMessage(intent);
-            } else if (BluetoothLeService.ACTION_DATA_READ.equals(action)){
-            	// receive message from CC
-            	Log.i(TAG,"new data to read");
-            	receiveBTMessage(intent);
-            } else if (BluetoothLeService.ACTION_DATA_WRITE.equals(action)){
-            	Log.i(TAG, "write successfully");
-            	synchronized (mWriteSuccess) {
-					mWriteSuccess.notify();
+		@Override
+		public void onServiceConnected(ComponentName componentName,
+				IBinder service) {
+			mBluetoothLeService = ((BluetoothLeService.LocalBinder) service)
+					.getService();
+			if (!mBluetoothLeService.initialize()) {
+				Log.e(TAG, "Unable to initialize Bluetooth");
+				finish();
+			}
+			// Automatically connects to the device upon successful start-up
+			// initialization.
+			mBluetoothLeService.connect(mDeviceAddress);
+		}
+
+		@Override
+		public void onServiceDisconnected(ComponentName componentName) {
+			mBluetoothLeService = null;
+		}
+	};
+
+	// Handles various events fired by the Service.
+	// ACTION_GATT_CONNECTED: connected to a GATT server.
+	// ACTION_GATT_DISCONNECTED: disconnected from a GATT server.
+	// ACTION_GATT_SERVICES_DISCOVERED: discovered GATT services.
+	// ACTION_DATA_AVAILABLE: received data from the device. This can be a
+	// result of read
+	// or notification operations.
+	private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			final String action = intent.getAction();
+			if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(action)) {
+				mConnected = true;
+				invalidateOptionsMenu();
+				Log.i(TAG, "BLE Connected");
+			} else if (BluetoothLeService.ACTION_GATT_DISCONNECTED
+					.equals(action)) {
+				mConnected = false;
+				invalidateOptionsMenu();
+				Log.i(TAG, "BLE Disconnected");
+				showDialog("Server Device Disconnected");
+				finish();
+			} else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED
+					.equals(action)) {
+				// get Server's data
+				// mBLEWriteThread.start();
+				getServerDeviceData();
+			} else if (BluetoothLeService.ACTION_DATA_NOTIFY.equals(action)) {
+				Log.i(TAG, "new data indicate");
+				mBluetoothLeService.readCharacteristic(mNotifyCharateristic);
+				// receiveBTMessage(intent);
+			} else if (BluetoothLeService.ACTION_DATA_READ.equals(action)) {
+				// receive message from CC
+				Log.i(TAG, "new data to read");
+				receiveBTMessage(intent);
+			} else if (BluetoothLeService.ACTION_DATA_WRITE.equals(action)) {
+				Log.i(TAG, "write successfully");
+				mWrited = true;
+				synchronized (mWriteSuccess) {
+					mWriteSuccess.notify();	
 				}
-            }
-        }
-    };
-    
-    //
-    //
-    //
-    // Handle Message from Threads
-	public Handler mMsgHandler = new Handler(){
-    	
-    	@Override
-    	public void handleMessage(Message msg) {
-    		BluetoothMessage btMsg = (BluetoothMessage)msg.obj;
-    		switch (msg.what) {
+			}
+		}
+	};
+
+	//
+	//
+	//
+	// Handle Message from Threads
+	public Handler mMsgHandler = new Handler() {
+		private BluetoothMessage mMsg = new BluetoothMessage();
+
+		@Override
+		public void handleMessage(Message msg) {
+			BluetoothMessage btMsg = (BluetoothMessage) msg.obj;
+			switch (msg.what) {
 
 			case CommandID.NUM_OF_DEVS:
-				final BluetoothMessage mMsg = new BluetoothMessage();
 				mMsg.setType(BTMessageType.BLE_DATA);
 				mMsg.setIndex(mBTMsgIndex);
-	        	mMsg.setLength((byte) 4);
-	        	mMsg.setCmdIdH((byte)CommandID.GET);
-	        	mMsg.setCmdIdL((byte)CommandID.DEV_WITH_INDEX);
-	        	mMsg.setPayload(DataConversion.int2ByteArr(0xFFFFFFFF));
-	        	
-	        	try {
+				mMsg.setLength((byte) 4);
+				mMsg.setCmdIdH((byte) CommandID.GET);
+				mMsg.setCmdIdL((byte) CommandID.DEV_WITH_INDEX);
+				mMsg.setPayload(DataConversion.int2ByteArr(0xFFFFFFFF));
+				try {
 					mProcessMsg.putBLEMessage(mWriteCharacteristic, mMsg);
 				} catch (InterruptedException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
-	        	Log.i(TAG, "send DEV WITH INDEX");
+				Log.i(TAG, "send DEV WITH INDEX");
 
 				break;
 			case CommandID.DEV_WITH_INDEX:
-				 // Get DeviceControlFragment from its index
-				Log.i(TAG, "Received Msg");	            
+				// Get DeviceControlFragment from its index
+				Log.i(TAG, "Received Msg");
 				break;
-			case CommandID.DEV_VAL: 
+			case CommandID.DEV_VAL:
 				try {
 					mProcessMsg.putBLEMessage(mWriteCharacteristic, btMsg);
 				} catch (InterruptedException e) {
@@ -174,320 +186,458 @@ public class HomeActivity extends FragmentActivity implements TabListener{
 					e.printStackTrace();
 				}
 				break;
+			case CommandID.NUM_OF_SCENES:
+				// Request to get active scene
+				mMsg.setType(BTMessageType.BLE_DATA);
+				mMsg.setIndex(mBTMsgIndex);
+				mMsg.setLength((byte) 1);
+				mMsg.setCmdIdH((byte) CommandID.GET);
+				mMsg.setCmdIdL((byte) CommandID.ACT_SCENE_WITH_INDEX);
+				mMsg.setPayload(new byte[] { (byte) 0xFF });
+				try {
+					mProcessMsg.putBLEMessage(mWriteCharacteristic, mMsg);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				break;
 
 			default:
 				break;
 			}
-    	};
-    };
-    
-    @Override
+		};
+	};
+
+	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-	    final Intent intent = getIntent();
-        mDeviceName 		= intent.getStringExtra(EXTRAS_DEVICE_NAME);
-        mDeviceAddress 		= intent.getStringExtra(EXTRAS_DEVICE_ADDRESS);
-        
-        // Initilization
-        viewPager = (ViewPager) findViewById(R.id.pager); 
-        actionBar = getActionBar();
-        actionBar.setTitle(mDeviceName);
-        
-        mPagerAdapter = new TabsPagerAdapter(getSupportFragmentManager());
-        
-        viewPager.setAdapter(mPagerAdapter);
-        actionBar.setHomeButtonEnabled(false);
-        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
-        
-        // Adding tabs
-        for (String tab_name : actionTabs){
-        	actionBar.addTab(actionBar.newTab()
-        			.setText(tab_name)
-        			.setTabListener(this));
-        }
-        
-    	
-        /**
-         * on swiping the viewpager make respective tab select	
-         */
-        viewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-			
+		final Intent intent = getIntent();
+		mDeviceName = intent.getStringExtra(EXTRAS_DEVICE_NAME);
+		mDeviceAddress = intent.getStringExtra(EXTRAS_DEVICE_ADDRESS);
+
+		// Initilization
+		viewPager = (ViewPager) findViewById(R.id.pager);
+		actionBar = getActionBar();
+		actionBar.setTitle(mDeviceName);
+
+		mPagerAdapter = new TabsPagerAdapter(getSupportFragmentManager());
+
+		viewPager.setAdapter(mPagerAdapter);
+		actionBar.setHomeButtonEnabled(false);
+		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
+
+		// Adding tabs
+		for (String tab_name : actionTabs) {
+			actionBar.addTab(actionBar.newTab().setText(tab_name)
+					.setTabListener(this));
+		}
+
+		/**
+		 * on swiping the viewpager make respective tab select
+		 */
+		viewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+
 			@Override
 			public void onPageSelected(int pos) {
 				// TODO Auto-generated method stub
 				actionBar.setSelectedNavigationItem(pos);
 			}
-			
+
 			@Override
 			public void onPageScrolled(int arg0, float arg1, int arg2) {
 				// TODO Auto-generated method stub
-				
+
 			}
-			
+
 			@Override
 			public void onPageScrollStateChanged(int arg0) {
 				// TODO Auto-generated method stub
-				
+
 			}
 		});
-        
-        Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
-        bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
-     
+
+		Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
+		bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
+
 	}
-    
-    @Override
-    protected void onResume() {
-        super.onResume();
-        registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
-        if (mBluetoothLeService != null) {
-            final boolean result = mBluetoothLeService.connect(mDeviceAddress);
-            Log.d(TAG, "Connect request result=" + result);
-        }
-        
-    }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        unregisterReceiver(mGattUpdateReceiver);
-    }
+	@Override
+	protected void onResume() {
+		super.onResume();
+		registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
+		if (mBluetoothLeService != null) {
+			final boolean result = mBluetoothLeService.connect(mDeviceAddress);
+			Log.d(TAG, "Connect request result=" + result);
+		}
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        unbindService(mServiceConnection);
-        mBluetoothLeService = null;
-    }
+	}
+
+	@Override
+	protected void onPause() {
+		super.onPause();
+		unregisterReceiver(mGattUpdateReceiver);
+	}
+
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		unbindService(mServiceConnection);
+		mBluetoothLeService = null;
+	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.gatt_services, menu);
 		if (mConnected) {
-            menu.findItem(R.id.menu_connect).setVisible(false);
-            menu.findItem(R.id.menu_disconnect).setVisible(true);
-        } else {
-            menu.findItem(R.id.menu_connect).setVisible(true);
-            menu.findItem(R.id.menu_disconnect).setVisible(false);
-        }
+			menu.findItem(R.id.menu_connect).setVisible(false);
+			menu.findItem(R.id.menu_disconnect).setVisible(true);
+		} else {
+			menu.findItem(R.id.menu_connect).setVisible(true);
+			menu.findItem(R.id.menu_disconnect).setVisible(false);
+		}
 		return true;
 	}
-	
+
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		// TODO Auto-generated method stub
-		 switch(item.getItemId()) {
-	         case R.id.menu_connect:
-	             mBluetoothLeService.connect(mDeviceAddress);
-	             return true;
-	         case R.id.menu_disconnect:
-	             mBluetoothLeService.disconnect();
-	             return true;
-		 }
+		switch (item.getItemId()) {
+		case R.id.menu_connect:
+			mBluetoothLeService.connect(mDeviceAddress);
+			return true;
+		case R.id.menu_disconnect:
+			mBluetoothLeService.disconnect();
+			return true;
+		}
 		return super.onOptionsItemSelected(item);
 	}
-	
+
 	/**
 	 * Add action to intentfilter
 	 * 
 	 * @return
 	 */
-	 private static IntentFilter makeGattUpdateIntentFilter() {
-	        final IntentFilter intentFilter = new IntentFilter();
-	        intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED);
-	        intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED);
-	        intentFilter.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED);
-	        intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
-	        intentFilter.addAction(BluetoothLeService.ACTION_DATA_NOTIFY);
-	        intentFilter.addAction(BluetoothLeService.ACTION_DATA_INDICATE);
-	        intentFilter.addAction(BluetoothLeService.ACTION_DATA_READ);
-	        intentFilter.addAction(BluetoothLeService.ACTION_DATA_WRITE);
-	        return intentFilter;
-	 }
-	 
-	 /***
-	  * Get writable characteristic of BLE device
-	  * 
-	  * @param gattServices
-	  * @return
-	  */
-	 private BluetoothGattCharacteristic getWriteCharacteristic(
-			 									List<BluetoothGattService> gattServices)
-	 {
-		 if(gattServices == null){
-			 return null;
-		 }
-		 
-		 List<BluetoothGattCharacteristic>	gattCharacteristics;
-		 int charaProp;
-		 
-		 for(BluetoothGattService gattService : gattServices){
-			 gattCharacteristics = gattService.getCharacteristics();
-			 for(BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics){
-				charaProp = gattCharacteristic.getProperties(); 
-				 if( (charaProp & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0){
-					 return gattCharacteristic;
-				 }
-			 }
-		 }
-		 
-		 return null;
-	 }
-	 
-	 /**
-	  * Get notification Characteristic
-	  * 
-	  * @param gattServices
-	  * @return
-	  */
-	 private BluetoothGattCharacteristic getReadCharacteristic(List<BluetoothGattService> gattServices){
-		 if(gattServices == null){
-			 return null;
-		 }
-		 
-		 List<BluetoothGattCharacteristic>	gattCharacteristics;
-		 int charaProp;
-		 
-		 for(BluetoothGattService gattService : gattServices){
-			 gattCharacteristics = gattService.getCharacteristics();
-			 for(BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics){
-				charaProp = gattCharacteristic.getProperties(); 
-				 if( (charaProp & BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0 |
-				     (charaProp & BluetoothGattCharacteristic.PROPERTY_INDICATE) > 0){
-					 return gattCharacteristic;
-				 }
-			 }
-		 }
-		 
-		 return null;
-	 }
-	 
-	 private void getServerDeviceData(){
-		 // Get Characteristic support to write
-     	mWriteCharacteristic = getWriteCharacteristic(mBluetoothLeService.getSupportedGattServices());
-     	// Get notification Characteristic
-     	mNotifyCharateristic = getReadCharacteristic(mBluetoothLeService.getSupportedGattServices());
-     	int mCharaProp = mWriteCharacteristic.getProperties();
-     	Log.i(TAG,"uuid:" + mWriteCharacteristic.getUuid().toString());
-     	Log.i(TAG,"uuid:" + mNotifyCharateristic.getUuid().toString());
-     	if(mWriteCharacteristic == null){
-     		showDialog("BLE device don't support to write :(");
-     		finish();
-     	}
-     	if(mNotifyCharateristic != null){  	
-     		mBluetoothLeService.setCharacteristicNotification(mNotifyCharateristic, true);
-     	}
-     	// Request Number of devices
-     	new CountDownTimer(300, 300) {
-				
-				@Override
-				public void onTick(long arg0) {
-					// TODO Auto-generated method stub
-					
+	private static IntentFilter makeGattUpdateIntentFilter() {
+		final IntentFilter intentFilter = new IntentFilter();
+		intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED);
+		intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED);
+		intentFilter
+				.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED);
+		intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
+		intentFilter.addAction(BluetoothLeService.ACTION_DATA_NOTIFY);
+		intentFilter.addAction(BluetoothLeService.ACTION_DATA_INDICATE);
+		intentFilter.addAction(BluetoothLeService.ACTION_DATA_READ);
+		intentFilter.addAction(BluetoothLeService.ACTION_DATA_WRITE);
+		return intentFilter;
+	}
+
+	/***
+	 * Get writable characteristic of BLE device
+	 * 
+	 * @param gattServices
+	 * @return
+	 */
+	private BluetoothGattCharacteristic getWriteCharacteristic(
+			List<BluetoothGattService> gattServices) {
+		if (gattServices == null) {
+			return null;
+		}
+
+		List<BluetoothGattCharacteristic> gattCharacteristics;
+		int charaProp;
+
+		for (BluetoothGattService gattService : gattServices) {
+			gattCharacteristics = gattService.getCharacteristics();
+			for (BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
+				charaProp = gattCharacteristic.getProperties();
+				if ((charaProp & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0) {
+					return gattCharacteristic;
 				}
-				
-				@Override
-				public void onFinish() {
-					// TODO Get number of devices
-					BluetoothMessage msg = new BluetoothMessage();
-					msg.setType(BTMessageType.BLE_DATA);
-					msg.setIndex(mBTMsgIndex);
-	            	msg.setLength((byte) 0);
-	            	msg.setCmdIdH((byte)CommandID.GET);
-	            	msg.setCmdIdL((byte)CommandID.NUM_OF_DEVS);
-	            	try {
-						mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get notification Characteristic
+	 * 
+	 * @param gattServices
+	 * @return
+	 */
+	private BluetoothGattCharacteristic getReadCharacteristic(
+			List<BluetoothGattService> gattServices) {
+		if (gattServices == null) {
+			return null;
+		}
+
+		List<BluetoothGattCharacteristic> gattCharacteristics;
+		int charaProp;
+
+		for (BluetoothGattService gattService : gattServices) {
+			gattCharacteristics = gattService.getCharacteristics();
+			for (BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
+				charaProp = gattCharacteristic.getProperties();
+				if ((charaProp & BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0
+						| (charaProp & BluetoothGattCharacteristic.PROPERTY_INDICATE) > 0) {
+					return gattCharacteristic;
 				}
-			}.start();
-			
-		//display device list after 1,5s
-		new CountDownTimer(1500, 1500) {
-			
+			}
+		}
+
+		return null;
+	}
+
+	private void getServerDeviceData() {
+		// Get Characteristic support to write
+		mWriteCharacteristic = getWriteCharacteristic(mBluetoothLeService
+				.getSupportedGattServices());
+		// Get notification Characteristic
+		mNotifyCharateristic = getReadCharacteristic(mBluetoothLeService
+				.getSupportedGattServices());
+		int mCharaProp = mWriteCharacteristic.getProperties();
+		Log.i(TAG, "uuid:" + mWriteCharacteristic.getUuid().toString());
+		Log.i(TAG, "uuid:" + mNotifyCharateristic.getUuid().toString());
+		if (mWriteCharacteristic == null) {
+			showDialog("BLE device don't support to write :(");
+			finish();
+		}
+		if (mNotifyCharateristic != null) {
+			mBluetoothLeService.setCharacteristicNotification(
+					mNotifyCharateristic, true);
+		}
+		// Request Number of devices
+		new CountDownTimer(300, 300) {
+
 			@Override
 			public void onTick(long arg0) {
 				// TODO Auto-generated method stub
-				
+
 			}
-			
+
+			@Override
+			public void onFinish() {
+				// TODO Get number of devices
+				BluetoothMessage msg = new BluetoothMessage();
+				msg.setType(BTMessageType.BLE_DATA);
+				msg.setIndex(mBTMsgIndex);
+				msg.setLength((byte) 0);
+				msg.setCmdIdH((byte) CommandID.GET);
+				msg.setCmdIdL((byte) CommandID.NUM_OF_DEVS);
+				try {
+					mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				Log.i(TAG, "Get num of dev");
+			}
+		}.start();
+
+		// display device list after 1,5s
+		new CountDownTimer(3000, 3000) {
+
+			@Override
+			public void onTick(long arg0) {
+				// TODO Auto-generated method stub
+
+			}
+
 			@Override
 			public void onFinish() {
 				// TODO Auto-generated method stub
-				if(!mDevInfoList.isEmpty()){
-					
-//					for(int i = 0; i < mDevInfoList.size(); i++){
-//						Log.i(TAG,Integer.toString(mDevInfoList.get(i).getDevID()) );
-//					}
-					
-					new Thread(new Runnable() {
-						
-						@Override
-						public void run() {
-							// TODO Auto-generated method stub
-							DeviceControlFragment mDeviceFrag = (DeviceControlFragment)getSupportFragmentManager()
-									.getFragments().get(0);
-							mDeviceFrag.updateUI(mDevInfoList);
-						}
-					}).start();
-					
-					// send request to get number of scene;
+				if (!mDevInfoList.isEmpty()) {
+					// TODO Auto-generated method stub
+					DeviceControlFragment mDeviceFrag = (DeviceControlFragment) getSupportFragmentManager()
+							.getFragments().get(0);
+					mDeviceFrag.updateUI(mDevInfoList);
+				}
+			}
+		}.start();
+
+		new CountDownTimer(3200, 3200) {
+
+			@Override
+			public void onTick(long arg0) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void onFinish() {
+				// send request to get number of scene;
+				BluetoothMessage msg = new BluetoothMessage();
+				msg.setType(BTMessageType.BLE_DATA);
+				msg.setIndex(mBTMsgIndex);
+				msg.setLength((byte) 0);
+				msg.setCmdIdH((byte) CommandID.GET);
+				msg.setCmdIdL((byte) CommandID.NUM_OF_SCENES);
+				try {
+					mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+			}
+		}.start();
+		
+		
+		// get inactive scene
+//		new CountDownTimer(8000, 8000) {
+//			
+//			@Override
+//			public void onTick(long millisUntilFinished) {
+//				// TODO Auto-generated method stub
+//				
+//			}
+//			
+//			@Override
+//			public void onFinish() {
+//				// Request to get inactive scene
+//				BluetoothMessage mMsg = new BluetoothMessage();
+//				 mMsg.setType(BTMessageType.BLE_DATA);
+//				 mMsg.setIndex(mBTMsgIndex);
+//				 mMsg.setLength((byte) 1);
+//				 mMsg.setCmdIdH((byte) CommandID.GET);
+//				 mMsg.setCmdIdL((byte) CommandID.INACT_SCENE_WITH_INDEX);
+//				 mMsg.setPayload(new byte[]{(byte) 0xFF});
+//				 try {
+//					 mProcessMsg.putBLEMessage(mWriteCharacteristic, mMsg);
+//				 } catch (InterruptedException e) {
+//				 // TODO Auto-generated catch block
+//				 e.printStackTrace();
+//				 }
+//				
+//			}
+//		}.start();
+
+		// request rules
+		new CountDownTimer(4000, 4000) {
+
+			@Override
+			public void onTick(long arg0) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void onFinish() {
+				// TODO Auto-generated method stub
+				for (int i = 0; i < mActSceneList.size(); i++) {
+					// send request to get list rules of scene;
 					BluetoothMessage msg = new BluetoothMessage();
 					msg.setType(BTMessageType.BLE_DATA);
 					msg.setIndex(mBTMsgIndex);
-	            	msg.setLength((byte) 0);
-	            	msg.setCmdIdH((byte)CommandID.GET);
-	            	msg.setCmdIdL((byte)CommandID.NUM_OF_SCENES);
-	            	try {
+					msg.setLength((byte) 10);
+					msg.setCmdIdH((byte) CommandID.GET);
+					msg.setCmdIdL((byte) CommandID.RULE_WITH_INDEX);
+
+					ByteBuffer payloadBuf = ByteBuffer.allocate(10);
+					payloadBuf.put(mActSceneList.get(i).getName().getBytes());
+					payloadBuf.put((byte) 0xFF);
+					payloadBuf.put((byte) 0xFF);
+					msg.setPayload(payloadBuf.array());
+					payloadBuf.clear();
+					try {
 						mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					
-					
 				}
 			}
 		}.start();
-		
-	 }
-	 
-	 /**
-	  * Receive and process Bluetooth Message
-	  * 
-	  * @param intent
-	  */
-	 private void receiveBTMessage(Intent intent){
-//		final byte tempBuf[] = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
-//		if(tempBuf.length == 0){
-//			Log.i(TAG, "data empty");
-//		}
-//		for(int i = 0; i < tempBuf.length; i++){
-//			System.out.println(tempBuf[i]);
-//		}
-     	mBTMsg = mProcessMsg.getBLEMessage(intent);  	    	
-		mProcessMsg.processBTMessageQueue(mBTMsg);
-	 }
-	  
-	 /**
-	  * Show pop-up message
-	  * 
-	  * @param msg
-	  */
-    public void showDialog(CharSequence msg){
-    	Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
-    }
-    
-    
-    // Precess ActionBar Tabs
+
+//		new CountDownTimer(7500, 7500) {
+//
+//			@Override
+//			public void onTick(long millisUntilFinished) {
+//				// TODO Auto-generated method stub
+//
+//			}
+//
+//			@Override
+//			public void onFinish() {
+//				// update scene UI
+//				ScenesFragment mSceneFrag = (ScenesFragment) getSupportFragmentManager()
+//						.getFragments().get(1);
+////				for (int i = 0; i < mActSceneList.size(); i++) {
+////					for (int j = 0; j < mActSceneList.get(i).getNumOfRule(); j++) {
+////						System.out.printf("cond = %h \n", mActSceneList.get(i)
+////												.getRuleWithIndex(j).getCond());
+////						System.out.printf("act = %h \n", mActSceneList.get(i)
+////								.getRuleWithIndex(j).getAction());
+////						System.out.printf("start = %h \n", mActSceneList.get(i)
+////								.getRuleWithIndex(j).getStartTime());
+////						System.out.printf("end = %h \n", mActSceneList.get(i)
+////								.getRuleWithIndex(j).getEndTime());
+////						System.out.printf("devId = %h \n", mActSceneList.get(i)
+////								.getRuleWithIndex(j).getActDevId());
+////						System.out.printf("devVal = %h \n", mActSceneList.get(i)
+////								.getRuleWithIndex(j).getActDevVal());
+////						System.out.printf("index = %h \n", mActSceneList.get(i)
+////								.getRuleWithIndex(j).getRuleIndex());
+////					}
+////				}
+//				mSceneFrag.updateSceneUI(mActSceneList);
+//
+//			}
+//		}.start();
+
+		new CountDownTimer(5000, 5000) {
+
+			@Override
+			public void onTick(long arg0) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void onFinish() {
+				ScenesFragment mSceneFrag = (ScenesFragment) getSupportFragmentManager()
+						.getFragments().get(1);
+				mSceneFrag.updateSceneUI(mActSceneList);
+			}
+		}.start();
+
+	}
+
+	/**
+	 * Receive and process Bluetooth Message
+	 * 
+	 * @param intent
+	 */
+	private void receiveBTMessage(Intent intent) {
+		// final byte tempBuf[] =
+		// intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
+		// if(tempBuf.length == 0){
+		// Log.i(TAG, "data empty");
+		// }
+		// for(int i = 0; i < tempBuf.length; i++){
+		// System.out.println(tempBuf[i]);
+		// }
+		mBTMsg = mProcessMsg.getBLEMessage(intent);
+		mProcessMsg.processBTMessage(mBTMsg);
+	}
+
+	/**
+	 * Show pop-up message
+	 * 
+	 * @param msg
+	 */
+	public void showDialog(CharSequence msg) {
+		Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
+	}
+
+	// Precess ActionBar Tabs
 	@Override
 	public void onTabReselected(Tab tab, FragmentTransaction ft) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
@@ -499,7 +649,7 @@ public class HomeActivity extends FragmentActivity implements TabListener{
 	@Override
 	public void onTabUnselected(Tab tab, FragmentTransaction ft) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	public Handler getmMsgHandler() {
@@ -509,5 +659,5 @@ public class HomeActivity extends FragmentActivity implements TabListener{
 	public void setmMsgHandler(Handler mMsgHandler) {
 		this.mMsgHandler = mMsgHandler;
 	}
-	 
+
 }

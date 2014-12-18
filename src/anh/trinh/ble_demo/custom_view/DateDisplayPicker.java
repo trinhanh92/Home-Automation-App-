@@ -8,6 +8,7 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.DatePicker;
+import android.widget.NumberPicker;
 import android.widget.TextView;
 
 public class DateDisplayPicker extends TextView implements OnDateSetListener{
@@ -50,6 +51,8 @@ public class DateDisplayPicker extends TextView implements OnDateSetListener{
         final Calendar c = Calendar.getInstance();
         DatePickerDialog dp = new DatePickerDialog(mContext, this, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH));
         dp.getDatePicker().setCalendarViewShown(false);
+        dp.setCancelable(true);
+        dp.setCanceledOnTouchOutside(true);
         dp.show();
     }
  

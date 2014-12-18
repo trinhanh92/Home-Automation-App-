@@ -6,7 +6,7 @@ import java.util.List;
 public class Scene_c {
 
 	private String sceneName;
-	private int sceneId;
+	private int sceneIndex;
 	private boolean isActived;
 	
 	private ArrayList<Rule_c> listOfRules = new  ArrayList<Rule_c>();
@@ -18,12 +18,12 @@ public class Scene_c {
 	
 	public Scene_c(String sceneName, int sceneId){
 		this.sceneName = sceneName;
-		this.sceneId = sceneId;
+		this.sceneIndex = sceneId;
 	}
 	
-	public Scene_c(String sceneName, int sceneId, ArrayList<Rule_c> listOfRule){
+	public Scene_c(String sceneName, int sceneIndex, ArrayList<Rule_c> listOfRule){
 		this.sceneName = sceneName;
-		this.sceneId = sceneId;
+		this.sceneIndex = sceneIndex;
 		this.listOfRules = listOfRule;
 	}
 	
@@ -44,12 +44,12 @@ public class Scene_c {
 		return this.isActived;
 	}
 	
-	public void setID(int id){
-		this.sceneId = id;
+	public void setIndex(int id){
+		this.sceneIndex = id;
 	}
 	
 	public int getID(){
-		return this.sceneId;
+		return this.sceneIndex;
 	}
 	
 	public void addRule(Rule_c mRule){

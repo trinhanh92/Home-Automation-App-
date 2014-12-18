@@ -14,20 +14,23 @@ public final class R {
     public static final class attr {
     }
     public static final class color {
-        public static final int accent_pink=0x7f04000a;
+        public static final int accent_pink=0x7f04000d;
         public static final int action_bar_color1=0x7f040000;
         public static final int action_bar_color2=0x7f040001;
-        public static final int background_grey=0x7f04000c;
+        public static final int background_grey=0x7f04000f;
         public static final int blue=0x7f040004;
-        public static final int brown=0x7f04000e;
-        public static final int cyan=0x7f040008;
-        public static final int cyan200=0x7f040009;
-        public static final int deep_orange=0x7f040006;
-        public static final int deep_purple=0x7f040007;
+        public static final int brown=0x7f040011;
+        public static final int cyan=0x7f04000b;
+        public static final int cyan200=0x7f04000c;
+        public static final int deep_orange=0x7f040009;
+        public static final int deep_purple=0x7f04000a;
         public static final int orange=0x7f040005;
-        public static final int pink_press=0x7f04000b;
-        public static final int red=0x7f04000d;
-        public static final int transparent=0x7f04000f;
+        public static final int orange100=0x7f040008;
+        public static final int orange700=0x7f040007;
+        public static final int orange900=0x7f040006;
+        public static final int pink_press=0x7f04000e;
+        public static final int red=0x7f040010;
+        public static final int transparent=0x7f040012;
         public static final int white=0x7f040003;
         public static final int yellow1=0x7f040002;
     }
@@ -43,56 +46,60 @@ public final class R {
     }
     public static final class drawable {
         public static final int add_button_selector=0x7f020000;
-        public static final int bulb=0x7f020001;
-        public static final int button_push=0x7f020002;
-        public static final int buzzer=0x7f020003;
-        public static final int color_picker=0x7f020004;
-        public static final int device_list_style=0x7f020005;
-        public static final int device_value_bg=0x7f020006;
-        public static final int dimmer=0x7f020007;
-        public static final int float_button=0x7f020008;
-        public static final int float_button_style=0x7f020009;
-        public static final int gas_sensor=0x7f02000a;
-        public static final int group_list_style=0x7f02000b;
-        public static final int ic_launcher=0x7f02000c;
-        public static final int inknon=0x7f02000d;
-        public static final int io_info_style=0x7f02000e;
-        public static final int light_sensor=0x7f02000f;
-        public static final int motor=0x7f020010;
-        public static final int next=0x7f020011;
-        public static final int pir_sensor=0x7f020012;
-        public static final int prev=0x7f020013;
-        public static final int progress_bg=0x7f020014;
-        public static final int rgb_led=0x7f020015;
-        public static final int seek_thumb=0x7f020016;
-        public static final int seek_thumb2=0x7f020017;
-        public static final int seek_thumb3=0x7f020018;
-        public static final int switch_btn=0x7f020019;
-        public static final int tab_actionbar_background=0x7f02001a;
-        public static final int tab_bar_background_selected=0x7f02001b;
-        public static final int tab_bar_background_selected_pressed=0x7f02001c;
-        public static final int tab_text_selector=0x7f02001d;
-        public static final int temp_sensor=0x7f02001e;
-        public static final int toggle_off=0x7f02001f;
-        public static final int toggle_on=0x7f020020;
-        public static final int toggle_selector=0x7f020021;
+        public static final int btn_menu=0x7f020001;
+        public static final int btn_menu_selector=0x7f020002;
+        public static final int bulb=0x7f020003;
+        public static final int button_push=0x7f020004;
+        public static final int buzzer=0x7f020005;
+        public static final int color_picker=0x7f020006;
+        public static final int device_list_style=0x7f020007;
+        public static final int device_value_bg=0x7f020008;
+        public static final int dimmer=0x7f020009;
+        public static final int float_button=0x7f02000a;
+        public static final int float_button_style=0x7f02000b;
+        public static final int gas_sensor=0x7f02000c;
+        public static final int group_list_style=0x7f02000d;
+        public static final int ic_launcher=0x7f02000e;
+        public static final int inknon=0x7f02000f;
+        public static final int io_info_style=0x7f020010;
+        public static final int light_sensor=0x7f020011;
+        public static final int motor=0x7f020012;
+        public static final int next=0x7f020013;
+        public static final int pir_sensor=0x7f020014;
+        public static final int prev=0x7f020015;
+        public static final int progress_bg=0x7f020016;
+        public static final int rgb_led=0x7f020017;
+        public static final int seek_thumb=0x7f020018;
+        public static final int seek_thumb2=0x7f020019;
+        public static final int seek_thumb3=0x7f02001a;
+        public static final int switch_btn=0x7f02001b;
+        public static final int tab_actionbar_background=0x7f02001c;
+        public static final int tab_bar_background_selected=0x7f02001d;
+        public static final int tab_bar_background_selected_pressed=0x7f02001e;
+        public static final int tab_text_selector=0x7f02001f;
+        public static final int temp_sensor=0x7f020020;
+        public static final int toggle_off=0x7f020021;
+        public static final int toggle_on=0x7f020022;
+        public static final int toggle_selector=0x7f020023;
     }
     public static final class id {
         public static final int FrameLayout1=0x7f0a0009;
         public static final int LinearLayout1=0x7f0a0010;
         public static final int LinearLayout3=0x7f0a002c;
         public static final int RelativeLayout1=0x7f0a0016;
+        public static final int Save=0x7f0a003b;
         public static final int TableLayout1=0x7f0a0019;
         public static final int actDevChoose=0x7f0a002d;
         public static final int actDevVal=0x7f0a002e;
-        public static final int btnAddRule=0x7f0a0031;
+        public static final int addRule=0x7f0a0037;
         public static final int btnAddScene=0x7f0a000b;
         public static final int btnPicker=0x7f0a0018;
-        public static final int btnSceneSave=0x7f0a002f;
+        public static final int btnSceneMenu=0x7f0a002f;
         public static final int condDevChoose=0x7f0a0021;
         public static final int condDevVal=0x7f0a0022;
         public static final int connection_state=0x7f0a000d;
         public static final int data_value=0x7f0a000e;
+        public static final int delRule=0x7f0a0038;
         public static final int devBlinkVal=0x7f0a0014;
         public static final int devIcon=0x7f0a0001;
         public static final int devName=0x7f0a0005;
@@ -106,6 +113,7 @@ public final class R {
         public static final int fromDate=0x7f0a0024;
         public static final int fromTime=0x7f0a0025;
         public static final int gatt_services_list=0x7f0a000f;
+        public static final int isActive=0x7f0a0031;
         public static final int linearLayout1=0x7f0a0002;
         public static final int linearLayout2=0x7f0a0012;
         public static final int llDevVal=0x7f0a0020;
@@ -120,6 +128,8 @@ public final class R {
         public static final int menu_scan=0x7f0a0035;
         public static final int menu_stop=0x7f0a0036;
         public static final int pager=0x7f0a0000;
+        public static final int removeScene=0x7f0a003a;
+        public static final int renameScene=0x7f0a0039;
         public static final int roomName=0x7f0a0011;
         public static final int sceneName=0x7f0a0030;
         public static final int seekBlink=0x7f0a0013;
@@ -155,6 +165,7 @@ public final class R {
     public static final class menu {
         public static final int gatt_services=0x7f090000;
         public static final int main=0x7f090001;
+        public static final int scene_menu=0x7f090002;
     }
     public static final class string {
         public static final int action=0x7f070018;

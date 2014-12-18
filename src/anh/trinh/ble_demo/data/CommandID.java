@@ -17,6 +17,9 @@ public final class CommandID {
 	public static final int NUM_OF_SCENES 			= 0x03;
 	public static final int ACT_SCENE_WITH_INDEX 	= 0x04;
 	public static final int INACT_SCENE_WITH_INDEX 	= 0x05;
+	public static final int NEW_SCENE				= 0x09;
+	public static final int REMOVE_SCENE			= 0x0a;
+	public static final int RENAME_SCENE            = 0x0b;
 	
 	//Rules
 	public static final int NUM_OF_RULES 	= 0x06;
