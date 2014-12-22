@@ -21,6 +21,7 @@ package anh.trinh.ble_demo.data;
  * 
  **********************************************************************************************/
 
+import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.text.Format;
 import java.util.ArrayList;
@@ -59,11 +60,11 @@ public class ProcessBTMsg {
 	 */
 	public BluetoothMessage getBLEMessage(Intent intent) {
 		byte[] recBuf = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
-//		for(int i = 0; i < recBuf.length; i++){
-//			System.out.print(recBuf[i]);
-//		}
-//		System.out.println();
-		
+		for (int i = 0; i < recBuf.length; i++) {
+			System.out.printf("%d ", recBuf[i]);
+		}
+		System.out.println();
+
 		BluetoothMessage msg = parseBTMessage(recBuf);
 		return msg;
 
@@ -78,6 +79,7 @@ public class ProcessBTMsg {
 	 */
 	public void putBLEMessage(BluetoothGattCharacteristic characteristic,
 			BluetoothMessage msg) throws InterruptedException {
+		int timeout;
 		ByteBuffer sendBuf = ByteBuffer.allocate(msg.getLength() + 6);
 		sendBuf.put(msg.getType());
 		sendBuf.put(DataConversion.short2ByteArr(msg.getIndex()));
@@ -87,20 +89,24 @@ public class ProcessBTMsg {
 		if (msg.getLength() != 0) {
 			sendBuf.put(msg.getPayload());
 		}
-
+		if (sendBuf.array().length > 20) {
+			timeout = 300;
+		} else {
+			timeout = 100;
+		}
 		characteristic.setValue(sendBuf.array());
 
-//		System.out.println("data send to BLE");
-//		for (int i = 0; i < msg.getLength() + 6; i++) {
-//			System.out.printf("%d ", sendBuf.array()[i]);
-//		}
-//		System.out.println();
+		 System.out.println("data send to BLE");
+		 for (int i = 0; i < msg.getLength() + 6; i++) {
+		 System.out.printf("%d ", sendBuf.array()[i]);
+		 }
+		 System.out.println();
 		sendBuf.clear();
 
 		mContext.mBTMsgIndex++;
 		synchronized (mContext.mWriteSuccess) {
 			if (!mContext.mWrited) {
-				mContext.mWriteSuccess.wait(100);
+				mContext.mWriteSuccess.wait(timeout);
 			}
 		}
 		mContext.mBluetoothLeService.writeCharacteristic(characteristic);
@@ -121,11 +127,11 @@ public class ProcessBTMsg {
 		sendBuf.put((byte) 0);
 		characteristic.setValue(sendBuf.array());
 
-//		System.out.println("data ACK to BLE");
-//		for (int i = 0; i < sendBuf.array().length; i++) {
-//			System.out.printf("%d ", sendBuf.array()[i]);
-//		}
-//		System.out.println();
+		// System.out.println("data ACK to BLE");
+		// for (int i = 0; i < sendBuf.array().length; i++) {
+		// System.out.printf("%d ", sendBuf.array()[i]);
+		// }
+		// System.out.println();
 		sendBuf.clear();
 		mContext.mBluetoothLeService.writeCharacteristic(characteristic);
 		mContext.mWrited = false;
@@ -195,10 +201,12 @@ public class ProcessBTMsg {
 			getDeviceList(dataBuf);
 			break;
 		case CommandID.DEV_VAL:
+			Log.i(TAG, "dev val");
 			// update device value from CC
 			updateDeviceValue(btMsg.getPayload());
 			break;
 		case CommandID.NUM_OF_SCENES:
+			Log.i(TAG, "num of scene");
 			mContext.mNumOfActScene = btMsg.getPayload()[0];
 			mContext.mNumOfInactScene = btMsg.getPayload()[1];
 			handlerMsg = mContext.mMsgHandler
@@ -207,14 +215,46 @@ public class ProcessBTMsg {
 
 			break;
 		case CommandID.ACT_SCENE_WITH_INDEX:
+			Log.i(TAG, "act scene with index");
 			getSceneList(btMsg.getPayload(), true);
 			break;
 		case CommandID.INACT_SCENE_WITH_INDEX:
+			Log.i(TAG, "inactive scene with index");
 			getSceneList(dataBuf.array(), false);
 			break;
-		case CommandID.RULE_WITH_INDEX:
-			getRuleList(dataBuf);
+		case CommandID.NUM_OF_RULES:
+			Log.i(TAG, "num of rule");
+			if (btMsg.getCmdIdH() == CommandID.SET) {
+			} else {
+				String sceneName = new String(DataConversion.getBytesFromArray(
+						0, 8, btMsg.getPayload()));
+				sendNumOfRule(sceneName);
+			}
+
 			break;
+		case CommandID.RULE_WITH_INDEX:
+			Log.i(TAG, "rule with index");
+			if (btMsg.getCmdIdH() == CommandID.SET) {
+				getRuleList(dataBuf);
+			} else {
+				String sceneName = new String(DataConversion.getBytesFromArray(
+						0, 8, btMsg.getPayload()));
+				short ruleIndex = dataBuf.getShort(8);
+				sendRuleList(sceneName, ruleIndex);
+			}
+			break;
+		case CommandID.RENAME_SCENE:
+			Log.i(TAG, "rename scene");
+			break;
+		case CommandID.REMOVE_SCENE:
+			Log.i(TAG, "remove scene");
+			break;
+		case CommandID.NEW_SCENE:
+			String sceneName = new String(DataConversion.getBytesFromArray(
+					0, 8, btMsg.getPayload()));
+//			if()
+			break;
+
 		default:
 			Log.e(TAG, "Command ID invalid");
 			break;
@@ -224,6 +264,118 @@ public class ProcessBTMsg {
 
 	}
 
+	/**
+	 * Send num of rule
+	 * 
+	 */
+	private void sendNumOfRule(String sceneName) {
+		Scene_c scene = getSceneWithName(sceneName);
+		if(scene == null){
+			Log.i(TAG, "scene not exist");
+			return;
+		}
+		BluetoothMessage mMsg = new BluetoothMessage();
+		mMsg.setType(BTMessageType.BLE_DATA);
+		mMsg.setIndex(mContext.mBTMsgIndex);
+		mMsg.setLength((byte) 10);
+		mMsg.setCmdIdH((byte) CommandID.SET);
+		mMsg.setCmdIdL((byte) CommandID.NUM_OF_RULES);
+		ByteBuffer payload = ByteBuffer.allocate(10);
+		payload.put(scene.getName().getBytes());
+		payload.putShort((short) scene.getNumOfRule());
+		mMsg.setPayload(payload.array());
+		payload.clear();
+		try {
+			putBLEMessage(mContext.mWriteCharacteristic, mMsg);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	private void sendRuleList(String sceneName, short ruleIndex) {
+		Scene_c scene = getSceneWithName(sceneName);
+		if (scene == null) {
+			Log.i(TAG, "scene not exist");
+			return;
+		}
+		ArrayList<Rule_c> mRuleList = scene.getListOfRules();
+
+		// scene all rule if index = 0xffff
+		if (ruleIndex == -1) {
+			for (int i = 0; i < scene.getNumOfRule(); i++) {
+				Log.i(TAG, "send rule with index " + i);
+				Rule_c mRule = mRuleList.get(i);
+				BluetoothMessage mMsg = new BluetoothMessage();
+				mMsg.setType(BTMessageType.BLE_DATA);
+				mMsg.setIndex((short) (mContext.mBTMsgIndex));
+				mMsg.setLength((byte) 27);
+				mMsg.setCmdIdH((byte) CommandID.SET);
+				mMsg.setCmdIdL((byte) CommandID.RULE_WITH_INDEX);
+
+				ByteBuffer payload = ByteBuffer.allocate(27);
+				payload.put(scene.getName().getBytes());
+				payload.putShort((short) i);
+				payload.put(scene.getActivedInByte());
+				payload.put((byte) mRule.getCond());
+				if ((mRule.getCond() == ConditionDef.IN_RANGE)
+						|| (mRule.getCond() == ConditionDef.IN_RANGE_EVDAY)) {
+					payload.putInt(mRule.getStartDateTime());
+					payload.putInt(mRule.getEndDateTime());
+				} else {
+					payload.putInt(mRule.getCondDevId());
+					payload.putInt(mRule.getCondDevVal() << 16);
+				}
+				payload.put((byte) mRule.getAction());
+				payload.putInt(mRule.getActDevId());
+				payload.putShort(mRule.getActDevVal());
+
+				mMsg.setPayload(payload.array());
+				payload.clear();
+				try {
+					putBLEMessage(mContext.mWriteCharacteristic, mMsg);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		} else {
+			Rule_c mRule = mRuleList.get(ruleIndex);
+			BluetoothMessage mMsg = new BluetoothMessage();
+			mMsg.setType(BTMessageType.BLE_DATA);
+			mMsg.setIndex((short) (mContext.mBTMsgIndex));
+			mMsg.setLength((byte) 30);
+			mMsg.setCmdIdH((byte) CommandID.SET);
+			mMsg.setCmdIdL((byte) CommandID.RULE_WITH_INDEX);
+
+			ByteBuffer payload = ByteBuffer.allocate(27);
+			payload.put(scene.getName().getBytes());
+			payload.putShort((short) ruleIndex);
+			payload.put(scene.getActivedInByte());
+			payload.put((byte) mRule.getCond());
+			if ((mRule.getCond() == ConditionDef.IN_RANGE)
+					|| (mRule.getCond() == ConditionDef.IN_RANGE_EVDAY)) {
+				payload.putInt(mRule.getStartDateTime());
+				payload.putInt(mRule.getEndDateTime());
+			} else {
+				payload.putInt(mRule.getCondDevId());
+				payload.putInt(mRule.getCondDevVal() << 16);
+			}
+			payload.put((byte) mRule.getAction());
+			payload.putInt(mRule.getActDevId());
+			payload.putShort(mRule.getActDevVal());
+
+			mMsg.setPayload(payload.array());
+			payload.clear();
+
+			try {
+				putBLEMessage(mContext.mWriteCharacteristic, mMsg);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
 
 	/**
 	 * Get rule list
@@ -274,8 +426,8 @@ public class ProcessBTMsg {
 		int sceneIndex;
 		for (int i = 0; i < numOfScene; i += 9) {
 			sceneIndex = dataBuf[i];
-			sceneName = new String(DataConversion
-					.getBytesFromArray(1, 8, dataBuf));
+			sceneName = new String(DataConversion.getBytesFromArray(1, 8,
+					dataBuf));
 			Scene_c newSceneObj = new Scene_c();
 			newSceneObj.setIndex(sceneIndex);
 			newSceneObj.setName(sceneName);
@@ -285,7 +437,6 @@ public class ProcessBTMsg {
 		}
 
 	}
-
 
 	/**
 	 * Get devList
@@ -311,7 +462,6 @@ public class ProcessBTMsg {
 
 	}
 
-
 	/**
 	 * Search device exist in device List by ID
 	 * 
@@ -326,6 +476,15 @@ public class ProcessBTMsg {
 			}
 		}
 		return false;
+	}
+
+	private Scene_c getSceneWithName(String sceneName) {
+		for (int i = 0; i < mContext.mActSceneList.size(); i++) {
+			if (mContext.mActSceneList.get(i).getName().matches(sceneName)) {
+				return mContext.mActSceneList.get(i);
+			}
+		}
+		return null;
 	}
 
 	/**

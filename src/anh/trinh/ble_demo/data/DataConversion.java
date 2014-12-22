@@ -65,7 +65,7 @@ public class DataConversion {
 		cRed = Color.red(mColor) * 31 / 255;
 		cGreen = Color.green(mColor) * 31 / 255;
 		cBlue = Color.blue(mColor) * 31 / 255;
-		retVal = (short) ( ((cRed << 10) & 0x1f) | (cGreen << 5) | (cBlue));
+		retVal = (short) (((cRed & 0x1f) << 10) | (cGreen << 5) | (cBlue));
 
 		return retVal;
 	}
@@ -78,9 +78,9 @@ public class DataConversion {
 	 */
 	public static int color16BitTo32Bit(short mColor) {
 		int cRed, cGreen, cBlue;
-		cRed = ((mColor >> 10) & 0x001F) * 255 / 31;
-		cGreen = ((mColor >> 5) & 0x001F) * 255 / 31;
-		cBlue = ((mColor) & 0x001F) * 255 / 31;
+		cRed = ((mColor >> 10) & 0x1f) * 255 / 31;
+		cGreen = ((mColor >> 5) & 0x1f) * 255 / 31;
+		cBlue = ((mColor) & 0x1f) * 255 / 31;
 		return Color.rgb(cRed, cGreen, cBlue);
 	}
 
@@ -209,46 +209,43 @@ public class DataConversion {
 	 * @param dataBuf
 	 * @return
 	 */
-	public static byte[] getBytesFromArray(int offset, int len,
-			byte[] dataBuf) {
+	public static byte[] getBytesFromArray(int offset, int len, byte[] dataBuf) {
 		byte[] retBuf = new byte[len];
-		for(int i = 0; i < len; i++){
-			retBuf[i] = dataBuf[offset+i];
+		for (int i = 0; i < len; i++) {
+			retBuf[i] = dataBuf[offset + i];
 		}
 		return retBuf;
-		
+
 	}
-	
-	
+
 	/**
 	 * Get short number from 2 bytes
 	 * 
 	 * @param byteArr
 	 * @return
 	 */
-	public static short getShort(byte[] byteArr){
+	public static short getShort(byte[] byteArr) {
 		ByteBuffer tempBuf = ByteBuffer.allocate(2);
 		tempBuf.put(byteArr[0]);
 		tempBuf.put(byteArr[1]);
 		return tempBuf.getShort(0);
-		
+
 	}
-	
-	
+
 	/**
 	 * Get integer number from 4 bytes
 	 * 
 	 * @param byteArr
 	 * @return
 	 */
-	public static int getInt(byte[] byteArr){
+	public static int getInt(byte[] byteArr) {
 		ByteBuffer tempBuf = ByteBuffer.allocate(4);
 		tempBuf.put(byteArr[0]);
 		tempBuf.put(byteArr[1]);
 		tempBuf.put(byteArr[2]);
 		tempBuf.put(byteArr[3]);
 		return tempBuf.getInt(0);
-		
+
 	}
 
 }

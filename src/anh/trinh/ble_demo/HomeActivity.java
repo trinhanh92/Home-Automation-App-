@@ -40,6 +40,7 @@ import anh.trinh.ble_demo.data.DataConversion;
 import anh.trinh.ble_demo.data.DeviceInfo;
 import anh.trinh.ble_demo.data.CommandID;
 import anh.trinh.ble_demo.data.ProcessBTMsg;
+import anh.trinh.ble_demo.list_view.Rule_c;
 import anh.trinh.ble_demo.list_view.Scene_c;
 import anh.trinh.ble_demo.thread_sync.ACKisReceived;
 import anh.trinh.ble_demo.thread_sync.BLEWriteThread;
@@ -66,7 +67,7 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 	private boolean mConnected = false;
 	public boolean mServerReady = false;
 	public MonitorObject mWriteSuccess = new MonitorObject();
-	public boolean       mWrited = true;
+	public boolean mWrited = true;
 	public BluetoothGattCharacteristic mWriteCharacteristic,
 			mNotifyCharateristic;
 	private BluetoothMessage mBTMsg;
@@ -140,7 +141,7 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 				Log.i(TAG, "write successfully");
 				mWrited = true;
 				synchronized (mWriteSuccess) {
-					mWriteSuccess.notify();	
+					mWriteSuccess.notify();
 				}
 			}
 		}
@@ -200,7 +201,7 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				
+
 				break;
 
 			default:
@@ -409,200 +410,29 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 			mBluetoothLeService.setCharacteristicNotification(
 					mNotifyCharateristic, true);
 		}
-		// Request Number of devices
-		new CountDownTimer(300, 300) {
 
-			@Override
-			public void onTick(long arg0) {
-				// TODO Auto-generated method stub
-
-			}
-
-			@Override
-			public void onFinish() {
-				// TODO Get number of devices
-				BluetoothMessage msg = new BluetoothMessage();
-				msg.setType(BTMessageType.BLE_DATA);
-				msg.setIndex(mBTMsgIndex);
-				msg.setLength((byte) 0);
-				msg.setCmdIdH((byte) CommandID.GET);
-				msg.setCmdIdL((byte) CommandID.NUM_OF_DEVS);
-				try {
-					mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				Log.i(TAG, "Get num of dev");
-			}
-		}.start();
-
-		// display device list after 1,5s
-		new CountDownTimer(3000, 3000) {
-
-			@Override
-			public void onTick(long arg0) {
-				// TODO Auto-generated method stub
-
-			}
-
-			@Override
-			public void onFinish() {
-				// TODO Auto-generated method stub
-				if (!mDevInfoList.isEmpty()) {
-					// TODO Auto-generated method stub
-					DeviceControlFragment mDeviceFrag = (DeviceControlFragment) getSupportFragmentManager()
-							.getFragments().get(0);
-					mDeviceFrag.updateUI(mDevInfoList);
-				}
-			}
-		}.start();
-
-		new CountDownTimer(3200, 3200) {
-
-			@Override
-			public void onTick(long arg0) {
-				// TODO Auto-generated method stub
-
-			}
-
-			@Override
-			public void onFinish() {
-				// send request to get number of scene;
-				BluetoothMessage msg = new BluetoothMessage();
-				msg.setType(BTMessageType.BLE_DATA);
-				msg.setIndex(mBTMsgIndex);
-				msg.setLength((byte) 0);
-				msg.setCmdIdH((byte) CommandID.GET);
-				msg.setCmdIdL((byte) CommandID.NUM_OF_SCENES);
-				try {
-					mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-			}
-		}.start();
+		/* step by step */
+		int startTime = 3000;
 		
+		//Step1: Request number of device
+		requestNumOfDev(200);
+		//Step2:  After timeout request device with index if missed
+//		requestDevIndexAgain(startTime);
+		//TODO: Step3: Request Zone name;
 		
-		// get inactive scene
-//		new CountDownTimer(8000, 8000) {
-//			
-//			@Override
-//			public void onTick(long millisUntilFinished) {
-//				// TODO Auto-generated method stub
-//				
-//			}
-//			
-//			@Override
-//			public void onFinish() {
-//				// Request to get inactive scene
-//				BluetoothMessage mMsg = new BluetoothMessage();
-//				 mMsg.setType(BTMessageType.BLE_DATA);
-//				 mMsg.setIndex(mBTMsgIndex);
-//				 mMsg.setLength((byte) 1);
-//				 mMsg.setCmdIdH((byte) CommandID.GET);
-//				 mMsg.setCmdIdL((byte) CommandID.INACT_SCENE_WITH_INDEX);
-//				 mMsg.setPayload(new byte[]{(byte) 0xFF});
-//				 try {
-//					 mProcessMsg.putBLEMessage(mWriteCharacteristic, mMsg);
-//				 } catch (InterruptedException e) {
-//				 // TODO Auto-generated catch block
-//				 e.printStackTrace();
-//				 }
-//				
-//			}
-//		}.start();
-
-		// request rules
-		new CountDownTimer(4000, 4000) {
-
-			@Override
-			public void onTick(long arg0) {
-				// TODO Auto-generated method stub
-
-			}
-
-			@Override
-			public void onFinish() {
-				// TODO Auto-generated method stub
-				for (int i = 0; i < mActSceneList.size(); i++) {
-					// send request to get list rules of scene;
-					BluetoothMessage msg = new BluetoothMessage();
-					msg.setType(BTMessageType.BLE_DATA);
-					msg.setIndex(mBTMsgIndex);
-					msg.setLength((byte) 10);
-					msg.setCmdIdH((byte) CommandID.GET);
-					msg.setCmdIdL((byte) CommandID.RULE_WITH_INDEX);
-
-					ByteBuffer payloadBuf = ByteBuffer.allocate(10);
-					payloadBuf.put(mActSceneList.get(i).getName().getBytes());
-					payloadBuf.put((byte) 0xFF);
-					payloadBuf.put((byte) 0xFF);
-					msg.setPayload(payloadBuf.array());
-					payloadBuf.clear();
-					try {
-						mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
-			}
-		}.start();
-
-//		new CountDownTimer(7500, 7500) {
-//
-//			@Override
-//			public void onTick(long millisUntilFinished) {
-//				// TODO Auto-generated method stub
-//
-//			}
-//
-//			@Override
-//			public void onFinish() {
-//				// update scene UI
-//				ScenesFragment mSceneFrag = (ScenesFragment) getSupportFragmentManager()
-//						.getFragments().get(1);
-////				for (int i = 0; i < mActSceneList.size(); i++) {
-////					for (int j = 0; j < mActSceneList.get(i).getNumOfRule(); j++) {
-////						System.out.printf("cond = %h \n", mActSceneList.get(i)
-////												.getRuleWithIndex(j).getCond());
-////						System.out.printf("act = %h \n", mActSceneList.get(i)
-////								.getRuleWithIndex(j).getAction());
-////						System.out.printf("start = %h \n", mActSceneList.get(i)
-////								.getRuleWithIndex(j).getStartTime());
-////						System.out.printf("end = %h \n", mActSceneList.get(i)
-////								.getRuleWithIndex(j).getEndTime());
-////						System.out.printf("devId = %h \n", mActSceneList.get(i)
-////								.getRuleWithIndex(j).getActDevId());
-////						System.out.printf("devVal = %h \n", mActSceneList.get(i)
-////								.getRuleWithIndex(j).getActDevVal());
-////						System.out.printf("index = %h \n", mActSceneList.get(i)
-////								.getRuleWithIndex(j).getRuleIndex());
-////					}
-////				}
-//				mSceneFrag.updateSceneUI(mActSceneList);
-//
-//			}
-//		}.start();
-
-		new CountDownTimer(5000, 5000) {
-
-			@Override
-			public void onTick(long arg0) {
-				// TODO Auto-generated method stub
-
-			}
-
-			@Override
-			public void onFinish() {
-				ScenesFragment mSceneFrag = (ScenesFragment) getSupportFragmentManager()
-						.getFragments().get(1);
-				mSceneFrag.updateSceneUI(mActSceneList);
-			}
-		}.start();
+		//Step4: Display Device List
+		showDeviceListUI(startTime + 300);
+		//Step5: Request number of scene
+		requestNumOfScene(startTime + 500);
+		//TODO: Step7: Request Num of Rule
+		//Step6: Request Rule with index
+		requestRuleIndex(startTime + 1300);
+		//TODO: Step7: Request Rule with index again if missed
+//		requestRuleIndexAgain(startTime + 2000);
+		//Step9: Request inactscene list
+//		requestInactiveScene(startTime + 2300);
+		//Step10: Display Scene List
+		showSceneListUI(startTime + 3000);
 
 	}
 
@@ -612,14 +442,6 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 	 * @param intent
 	 */
 	private void receiveBTMessage(Intent intent) {
-		// final byte tempBuf[] =
-		// intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
-		// if(tempBuf.length == 0){
-		// Log.i(TAG, "data empty");
-		// }
-		// for(int i = 0; i < tempBuf.length; i++){
-		// System.out.println(tempBuf[i]);
-		// }
 		mBTMsg = mProcessMsg.getBLEMessage(intent);
 		mProcessMsg.processBTMessage(mBTMsg);
 	}
@@ -660,4 +482,330 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 		this.mMsgHandler = mMsgHandler;
 	}
 
+	/***********************************************************************************************
+	 * 
+	 **********************************************************************************************/
+
+	// search device index in list
+	private boolean isNonExistDevIndex(ArrayList<DeviceInfo> mDevList, int index) {
+		for (int i = 0; i < mDevList.size(); i++) {
+			if (mDevList.get(i).getDevIdx() != index) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// search rule index in list
+	private boolean isNonExistRuleIndex(ArrayList<Rule_c> mRuleList, int index) {
+		for (int i = 0; i < mRuleList.size(); i++) {
+			if (mRuleList.get(i).getRuleIndex() != index) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// search scene index in list
+	private boolean isNonExistSceneIndex(ArrayList<Scene_c> mSceneList,
+			int index) {
+		for (int i = 0; i < mSceneList.size(); i++) {
+			if (mSceneList.get(i).getID() != index) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/***********************************************************************************************
+	 * Implementation timeout functions
+	 * 
+	 ***********************************************************************************************/
+	private void requestNumOfDev(int timeout) {
+		// Request Number of devices
+		new CountDownTimer(timeout, timeout) {
+
+			@Override
+			public void onTick(long arg0) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void onFinish() {
+				// TODO Get number of devices
+				BluetoothMessage msg = new BluetoothMessage();
+				msg.setType(BTMessageType.BLE_DATA);
+				msg.setIndex(mBTMsgIndex);
+				msg.setLength((byte) 0);
+				msg.setCmdIdH((byte) CommandID.GET);
+				msg.setCmdIdL((byte) CommandID.NUM_OF_DEVS);
+				try {
+					mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				Log.i(TAG, "Get num of dev");
+			}
+		}.start();
+	}
+
+	private void showDeviceListUI(int timeout) {
+		// display device list after 3s
+		new CountDownTimer(timeout, timeout) {
+
+			@Override
+			public void onTick(long arg0) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void onFinish() {
+				// TODO Auto-generated method stub
+				if (!mDevInfoList.isEmpty()) {
+					// TODO Auto-generated method stub
+					DeviceControlFragment mDeviceFrag = (DeviceControlFragment) getSupportFragmentManager()
+							.getFragments().get(0);
+					mDeviceFrag.updateUI(mDevInfoList);
+				}
+			}
+		}.start();
+	}
+
+	private void requestDevIndexAgain(int timeout) {
+		new CountDownTimer(timeout, timeout) {
+
+			@Override
+			public void onTick(long millisUntilFinished) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void onFinish() {
+				// TODO Auto-generated method stub
+				if (mDevInfoList.size() < mNumOfDev) {
+					for (int i = 0; i < mNumOfDev; i++) {
+						if (isNonExistDevIndex(mDevInfoList, i)) {
+							BluetoothMessage btMsg = new BluetoothMessage();
+							btMsg.setType(BTMessageType.BLE_DATA);
+							btMsg.setIndex(mBTMsgIndex);
+							btMsg.setLength((byte) 4);
+							btMsg.setCmdIdH((byte) CommandID.GET);
+							btMsg.setCmdIdL((byte) CommandID.DEV_WITH_INDEX);
+							btMsg.setPayload(DataConversion.int2ByteArr(i));
+							try {
+								mProcessMsg.putBLEMessage(mWriteCharacteristic,
+										btMsg);
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
+					}
+				}
+
+			}
+		}.start();
+	}
+
+	private void requestNumOfScene(int timeout) {
+		new CountDownTimer(timeout, timeout) {
+
+			@Override
+			public void onTick(long arg0) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void onFinish() {
+				// send request to get number of scene;
+				BluetoothMessage msg = new BluetoothMessage();
+				msg.setType(BTMessageType.BLE_DATA);
+				msg.setIndex(mBTMsgIndex);
+				msg.setLength((byte) 0);
+				msg.setCmdIdH((byte) CommandID.GET);
+				msg.setCmdIdL((byte) CommandID.NUM_OF_SCENES);
+				try {
+					mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+			}
+		}.start();
+	}
+
+	private void requestInactiveScene(int timeout) {
+		// get inactive scene
+		new CountDownTimer(timeout, timeout) {
+
+			@Override
+			public void onTick(long millisUntilFinished) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void onFinish() {
+				// Request to get inactive scene
+				BluetoothMessage mMsg = new BluetoothMessage();
+				mMsg.setType(BTMessageType.BLE_DATA);
+				mMsg.setIndex(mBTMsgIndex);
+				mMsg.setLength((byte) 1);
+				mMsg.setCmdIdH((byte) CommandID.GET);
+				mMsg.setCmdIdL((byte) CommandID.INACT_SCENE_WITH_INDEX);
+				mMsg.setPayload(new byte[] { (byte) 0xFF });
+				try {
+					mProcessMsg.putBLEMessage(mWriteCharacteristic, mMsg);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+			}
+		}.start();
+	}
+
+	private void requestRuleIndex(int timeout) {
+		// request rules
+		new CountDownTimer(timeout, timeout) {
+
+			@Override
+			public void onTick(long arg0) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void onFinish() {
+				// TODO Auto-generated method stub
+				for (int i = 0; i < mActSceneList.size(); i++) {
+					// send request to get list rules of scene;
+					BluetoothMessage msg = new BluetoothMessage();
+					msg.setType(BTMessageType.BLE_DATA);
+					msg.setIndex(mBTMsgIndex);
+					msg.setLength((byte) 10);
+					msg.setCmdIdH((byte) CommandID.GET);
+					msg.setCmdIdL((byte) CommandID.RULE_WITH_INDEX);
+
+					ByteBuffer payloadBuf = ByteBuffer.allocate(10);
+					payloadBuf.put(mActSceneList.get(i).getName().getBytes());
+					payloadBuf.put((byte) 0xFF);
+					payloadBuf.put((byte) 0xFF);
+					msg.setPayload(payloadBuf.array());
+					payloadBuf.clear();
+					try {
+						mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}
+		}.start();
+	}
+
+	private void requestRuleIndexAgain(int timeout) {
+		String sceneName;
+		for(int i = 0; i < mActSceneList.size(); i++){
+			if(mActSceneList.get(i).getActived() == true){
+				sceneName = mActSceneList.get(i).getName();
+			}
+		}
+		new CountDownTimer(timeout, timeout) {
+
+			@Override
+			public void onTick(long millisUntilFinished) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void onFinish() {
+				// TODO Auto-generated method stub
+//				mActSceneList.get(0).g
+				if (mActSceneList.get(0).getNumOfRule() < mNumOfInactScene) {
+					for (int i = 0; i < mNumOfDev; i++) {
+						if (isNonExistDevIndex(mDevInfoList, i)) {
+							BluetoothMessage btMsg = new BluetoothMessage();
+							btMsg.setType(BTMessageType.BLE_DATA);
+							btMsg.setIndex(mBTMsgIndex);
+							btMsg.setLength((byte) 4);
+							btMsg.setCmdIdH((byte) CommandID.GET);
+							btMsg.setCmdIdL((byte) CommandID.DEV_WITH_INDEX);
+							btMsg.setPayload(DataConversion.int2ByteArr(i));
+							try {
+								mProcessMsg.putBLEMessage(mWriteCharacteristic,
+										btMsg);
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
+					}
+				}
+
+			}
+		}.start();
+	}
+	
+	private void requestSceneIndexAgain(int timeout){
+		new CountDownTimer(timeout, timeout) {
+
+			@Override
+			public void onTick(long millisUntilFinished) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void onFinish() {
+				// TODO Auto-generated method stub
+				if (mActSceneList.size() < mNumOfActScene) {
+					for (int i = 0; i < mNumOfActScene; i++) {
+						if (isNonExistSceneIndex(mActSceneList, i)) {
+							BluetoothMessage btMsg = new BluetoothMessage();
+							btMsg.setType(BTMessageType.BLE_DATA);
+							btMsg.setIndex(mBTMsgIndex);
+							btMsg.setLength((byte) 4);
+							btMsg.setCmdIdH((byte) CommandID.GET);
+							btMsg.setCmdIdL((byte) CommandID.ACT_SCENE_WITH_INDEX);
+							btMsg.setPayload(DataConversion.int2ByteArr(i));
+							try {
+								mProcessMsg.putBLEMessage(mWriteCharacteristic,
+										btMsg);
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
+					}
+				}
+
+			}
+		}.start();		
+	}
+	
+	private void showSceneListUI(int timeout) {
+		new CountDownTimer(timeout, timeout) {
+
+			@Override
+			public void onTick(long arg0) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void onFinish() {
+				ScenesFragment mSceneFrag = (ScenesFragment) getSupportFragmentManager()
+						.getFragments().get(1);
+				mSceneFrag.updateSceneUI(mActSceneList);
+			}
+		}.start();
+	}
 }

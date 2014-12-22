@@ -17,6 +17,8 @@
     <color name="accent_pink">#ff4081</color>
     <color name="pink_press">#F48FB1</color>
     <color name="background_grey">#EEEEEE</color>
+    <color name="grey100">#F5F5F5</color>
+    <color name="grey50">#FAFAFA</color>
     <color name="red">#e51c23</color>
     <color name="brown">#795548</color>
     <color name="transparent">#00000000</color>

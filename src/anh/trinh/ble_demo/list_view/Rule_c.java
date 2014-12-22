@@ -82,12 +82,12 @@ public class Rule_c {
 	
 	public void setStartDateTime(int startTime){
 		this.startDateTime = startTime;
-		this.startDate = (startTime >> 16 ) & 0xffff;
-		this.startTime = startTime & 0xffff;
+		this.startDate = startTime & 0xFFFF0000;
+		this.startTime = startTime & 0xFFFF;
 	}
 	
 	public void setStartDate(int startDate){
-		this.startDate = startDate << 16;
+		this.startDate = startDate;
 	}
 	
 	public void setStartTime(int time){
@@ -96,19 +96,19 @@ public class Rule_c {
 	
 	public void setEndDateTime(int endTime){
 		this.endDateTime = endTime;
-		this.endDate = (endTime >> 16 ) & 0xffff;
+		this.endDate = endTime & 0xFFFF0000;
 		this.endTime = endTime & 0xffff;
 	}
 	
 	public void setEndDate(int date){
-		this.endDate = date << 16;
+		this.endDate = date;
 	}
 	
 	public void setEndTime(int time){
 		this.endTime  = time;
 	}
 	public int getStartDateTime(){
-		return this.startDateTime = this.startDate << 16 | this.startTime;
+		return this.startDateTime = this.startDate | this.startTime;
 	}
 	
 	public int getStartDate(){
@@ -120,7 +120,7 @@ public class Rule_c {
 	}
 	
 	public int getEndDateTime(){
-		return this.endDateTime = this.endDate << 16 | this.endTime;
+		return this.endDateTime = this.endDate | this.endTime;
 	}
 	
 	public int getEndDate(){

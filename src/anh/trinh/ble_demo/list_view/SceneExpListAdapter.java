@@ -15,6 +15,7 @@ import java.util.Locale;
 import org.w3c.dom.Text;
 
 import android.app.AlertDialog;
+import android.app.AlertDialog.Builder;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
@@ -33,6 +34,8 @@ import android.widget.ArrayAdapter;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -86,10 +89,13 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 	}
 
 	@Override
-	public View getChildView(final int groupPos, final int childPos,
-			boolean isLastChild, View convertView, ViewGroup parent) {
+	public View getChildView(int groupPos, int childPos, boolean isLastChild,
+			View convertView, ViewGroup parent) {
+		final View mParent = convertView;
 		// TODO Create child view
-		Rule_c mRuleObj = (Rule_c) getChild(groupPos, childPos);
+		final Rule_c mRuleObj = (Rule_c) getChild(groupPos, childPos);
+		final int scenePos = groupPos;
+		final int rulePos = childPos;
 		Log.i(TAG, "childView");
 		if (convertView == null) {
 			LayoutInflater inf = (LayoutInflater) mContext
@@ -111,8 +117,12 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 				.findViewById(R.id.mCondChoose);
 		final Spinner condDevChoose = (Spinner) convertView
 				.findViewById(R.id.condDevChoose);
-		EditText condDevVal = (EditText) convertView
+		final EditText condDevVal = (EditText) convertView
 				.findViewById(R.id.condDevVal);
+
+		final ImageButton mBtnMenu = (ImageButton) convertView
+				.findViewById(R.id.btnMenu);
+		mBtnMenu.setFocusable(false);
 
 		TextView mFromDate = (TextView) convertView.findViewById(R.id.fromDate);
 		TextView mFromTime = (TextView) convertView.findViewById(R.id.fromTime);
@@ -123,7 +133,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 				.findViewById(R.id.mActChoose);
 		final Spinner actDevChoose = (Spinner) convertView
 				.findViewById(R.id.actDevChoose);
-		EditText actDevVal = (EditText) convertView
+		final EditText actDevVal = (EditText) convertView
 				.findViewById(R.id.actDevVal);
 
 		// set data resource for Condition and Action spinner
@@ -155,10 +165,6 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 			@Override
 			public void onItemSelected(AdapterView<?> arg0, View arg1, int pos,
 					long arg3) {
-				// TODO Auto-generated method stub
-				// ScenesFragment.listOfScene.get(groupPos)
-				// .getRuleWithIndex(childPos).setCond(pos);
-				// listOfScene.get(groupPos).getRuleWithIndex(groupPos).setCond(pos);
 				if ((pos == ConditionDef.IN_RANGE)
 						|| (pos == ConditionDef.IN_RANGE_EVDAY)) {
 					llDevVal.setVisibility(View.INVISIBLE);
@@ -179,8 +185,8 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 										View arg1, int pos, long arg3) {
 									// TODO Auto-generated method stub
 									listOfScene
-											.get(groupPos)
-											.getRuleWithIndex(childPos)
+											.get(scenePos)
+											.getRuleWithIndex(rulePos)
 											.setCondDevId(
 													mContext.mDevInfoList.get(
 															pos).getDevID());
@@ -195,31 +201,30 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 							});
 
 				}
-				
+
 				actDevChoose
-				.setOnItemSelectedListener(new OnItemSelectedListener() {
+						.setOnItemSelectedListener(new OnItemSelectedListener() {
 
-					@Override
-					public void onItemSelected(AdapterView<?> arg0,
-							View arg1, int pos, long arg3) {
-						// TODO Auto-generated method stub
-						listOfScene
-								.get(groupPos)
-								.getRuleWithIndex(childPos)
-								.setActDevId(
-										mContext.mDevInfoList.get(
-												pos).getDevID());
-					}
+							@Override
+							public void onItemSelected(AdapterView<?> arg0,
+									View arg1, int pos, long arg3) {
+								// TODO Auto-generated method stub
+								listOfScene
+										.get(scenePos)
+										.getRuleWithIndex(rulePos)
+										.setActDevId(
+												mContext.mDevInfoList.get(pos)
+														.getDevID());
+							}
 
-					@Override
-					public void onNothingSelected(
-							AdapterView<?> arg0) {
-						// TODO Auto-generated method stub
+							@Override
+							public void onNothingSelected(AdapterView<?> arg0) {
+								// TODO Auto-generated method stub
 
-					}
-				});
-				
-				listOfScene.get(groupPos).getRuleWithIndex(childPos)
+							}
+						});
+
+				listOfScene.get(scenePos).getRuleWithIndex(rulePos)
 						.setCond(pos);
 			}
 
@@ -236,7 +241,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 			public void onItemSelected(AdapterView<?> arg0, View arg1, int pos,
 					long arg3) {
 				// TODO Auto-generated method stub
-				listOfScene.get(groupPos).getRuleWithIndex(childPos)
+				listOfScene.get(scenePos).getRuleWithIndex(rulePos)
 						.setAction(pos);
 			}
 
@@ -276,7 +281,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 					@Override
 					public void onClick(View v) {
 						// TODO Auto-generated method stub
-						showDatePickerDialog(groupPos, childPos, (TextView) v);
+						showDatePickerDialog(scenePos, rulePos, (TextView) v);
 					}
 				});
 
@@ -285,7 +290,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 					@Override
 					public void onClick(View v) {
 						// TODO Auto-generated method stub
-						showTimePickerDialog(groupPos, childPos, (TextView) v);
+						showTimePickerDialog(scenePos, rulePos, (TextView) v);
 					}
 				});
 
@@ -294,7 +299,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 					@Override
 					public void onClick(View v) {
 						// TODO Auto-generated method stub
-						showDatePickerDialog(groupPos, childPos, (TextView) v);
+						showDatePickerDialog(scenePos, rulePos, (TextView) v);
 					}
 				});
 
@@ -303,72 +308,23 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 					@Override
 					public void onClick(View v) {
 						// TODO Auto-generated method stub
-						showTimePickerDialog(groupPos, childPos, (TextView) v);
+						showTimePickerDialog(scenePos, rulePos, (TextView) v);
 					}
 				});
 			}
-			if (llDevVal.getVisibility() == View.VISIBLE) {
-				condDevChoose.setSelection(getDeviceIndex(
-						mContext.mDevInfoList, mRuleObj.getCondDevId()));
-				condDevVal.setText(Integer.toString(mRuleObj.getCondDevVal()));
-			}
-			// set condition device value
-			condDevVal.addTextChangedListener(new TextWatcher() {
-
-				@Override
-				public void onTextChanged(CharSequence s, int start,
-						int before, int count) {
-					// TODO Auto-generated method stub
-				}
-
-				@Override
-				public void beforeTextChanged(CharSequence s, int start,
-						int count, int after) {
-					// TODO Auto-generated method stub
-
-				}
-
-				@Override
-				public void afterTextChanged(Editable s) {
-					// TODO Auto-generated method stub
-					if (s.length() > 0) {
-						// ((Rule_c) getChild(groupPos, childPos))
-						// .setCondDevVal(Short.valueOf(s.toString()));
-						listOfScene.get(groupPos).getRuleWithIndex(childPos)
-								.setCondDevVal(Short.valueOf(s.toString()));
-					}
-				}
-			});
-
-			// set action device value
-			actDevVal.addTextChangedListener(new TextWatcher() {
-
-				@Override
-				public void onTextChanged(CharSequence s, int start,
-						int before, int count) {
-					// TODO Auto-generated method stub
-				}
-
-				@Override
-				public void beforeTextChanged(CharSequence s, int start,
-						int count, int after) {
-					// TODO Auto-generated method stub
-
-				}
-
-				@Override
-				public void afterTextChanged(Editable s) {
-					// TODO Auto-generated method stub
-					if (s.length() > 0) {
-						// ((Rule_c) getChild(groupPos, childPos))
-						// .setActDevVal(Short.valueOf(s.toString()));
-						listOfScene.get(groupPos).getRuleWithIndex(childPos)
-								.setActDevVal(Short.valueOf(s.toString()));
-					}
-				}
-			});
+			condDevChoose.setSelection(getDeviceIndex(mContext.mDevInfoList,
+					mRuleObj.getCondDevId()));
+			condDevVal.setText(Integer.toString(mRuleObj.getCondDevVal()));
 		}
 
+		mBtnMenu.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				showRuleMenuPopup(mBtnMenu, mContext, rulePos, scenePos,
+						condDevVal, actDevVal);
+			}
+		});
 		return convertView;
 	}
 
@@ -417,6 +373,25 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 		isActive.setFocusable(false);
 		isActive.setChecked(sceneObj.getActived());
 		btnSceneMenu.setFocusable(false);
+
+		// set active scene
+		isActive.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+
+			@Override
+			public void onCheckedChanged(CompoundButton arg0, boolean isChecked) {
+				// TODO Auto-generated method stub
+				((Scene_c) getGroup(scenePos)).setActived(isChecked);
+				if (listOfScene.get(scenePos).getActived()) {
+					for (int i = 0; i < listOfScene.size(); i++) {
+						if (listOfScene.get(i).getActived() && (i != scenePos)) {
+							listOfScene.get(i).setActived(false);
+							notifyDataSetChanged();
+						}
+					}
+				}
+			}
+		});
+		// button Menu click
 		btnSceneMenu.setOnClickListener(new OnClickListener() {
 
 			@Override
@@ -455,9 +430,78 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 		return -1;
 	}
 
-	private boolean isRuleEmpty(Rule_c mRule) {
-		return false;
+	/**
+	 * show rule option menu
+	 * 
+	 */
 
+	private void showRuleMenuPopup(View btnRuleMenu,
+			final HomeActivity mContext, final int rulePos, final int scenePos,
+			final EditText condDevVal, final EditText actDevVal) {
+
+		PopupMenu mRuleMenu = new PopupMenu(mContext, btnRuleMenu);
+		mRuleMenu.getMenuInflater().inflate(R.menu.rule_menu,
+				mRuleMenu.getMenu());
+		mRuleMenu.setOnMenuItemClickListener(new OnMenuItemClickListener() {
+
+			@Override
+			public boolean onMenuItemClick(MenuItem item) {
+				// TODO Auto-generated method stub
+				switch (item.getItemId()) {
+				case R.id.saveRule:
+					if (!condDevVal.getText().toString().matches("")) {
+						((Rule_c) getChild(scenePos, rulePos))
+								.setCondDevVal(Short.valueOf(condDevVal
+										.getText().toString()));
+					} else {
+						((Rule_c) getChild(scenePos, rulePos))
+								.setCondDevVal((short) 0);
+					}
+					if (!actDevVal.getText().toString().matches("")) {
+						((Rule_c) getChild(scenePos, rulePos))
+								.setActDevVal(Short.valueOf(actDevVal.getText()
+										.toString()));
+					} else {
+						((Rule_c) getChild(scenePos, rulePos))
+								.setActDevVal((short) 0);
+					}
+					break;
+				case R.id.delRule:
+					AlertDialog.Builder mBuiler = new AlertDialog.Builder(
+							mContext);
+					mBuiler.setTitle("Do you want to delete this rule?");
+					mBuiler.setPositiveButton("OK",
+							new DialogInterface.OnClickListener() {
+
+								@Override
+								public void onClick(DialogInterface dialog,
+										int which) {
+									// TODO Auto-generated method stub
+									listOfScene.get(scenePos).getListOfRules()
+											.remove(rulePos);
+									notifyDataSetChanged();
+								}
+							});
+					mBuiler.setNegativeButton("Cancel",
+							new DialogInterface.OnClickListener() {
+
+								@Override
+								public void onClick(DialogInterface dialog,
+										int which) {
+									// TODO Auto-generated method stub
+									dialog.dismiss();
+								}
+							});
+					mBuiler.show();
+					break;
+
+				default:
+					break;
+				}
+				return false;
+			}
+		});
+		mRuleMenu.show();
 	}
 
 	/**
@@ -495,7 +539,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 
 				// save
 				case R.id.Save:
-
+					sendNewSceneToCC(scenePos);
 					break;
 
 				default:
@@ -524,17 +568,14 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 					public void onTimeSet(TimePicker view, int hourOfDay,
 							int minute) {
 						if (view.isShown()) {
-							v.setText(stf
-									.format(new Time(hourOfDay, minute, 0)));
+							v.setText(hourOfDay + ":" + minute);
 							String getTimeString = v.getText().toString();
 							if (v.getId() == R.id.fromTime) {
 								try {
 									((Rule_c) getChild(scenePos, rulePos))
-											.setStartTime(getTimeDOS(
-													stf.parse(getTimeString)
-															.getHours(),
-													stf.parse(getTimeString)
-															.getMinutes()));
+											.setStartTime(javaToDosTime(stf
+													.parse(getTimeString)
+													.getTime()));
 									Log.i(TAG, "time time");
 									System.out.println(stf.parse(v.getText()
 											.toString()));
@@ -545,11 +586,9 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 							} else {
 								try {
 									((Rule_c) getChild(scenePos, rulePos))
-											.setEndTime(getTimeDOS(
-													stf.parse(getTimeString)
-															.getHours(),
-													stf.parse(getTimeString)
-															.getMinutes()));
+											.setEndTime(javaToDosTime(stf
+													.parse(getTimeString)
+													.getTime()));
 								} catch (ParseException e) {
 									// TODO Auto-generated catch block
 									e.printStackTrace();
@@ -600,13 +639,9 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 							} else {
 								try {
 									((Rule_c) getChild(scenePos, rulePos))
-											.setEndDate(getDateDOS(
-													sdf.parse(getTimeString)
-															.getYear(),
-													sdf.parse(getTimeString)
-															.getMonth(),
-													sdf.parse(getTimeString)
-															.getDay()));
+											.setEndDate(javaToDosTime(sdf
+													.parse(getTimeString)
+													.getTime()));
 									Log.i(TAG, "time time");
 									System.out.println(sdf.parse(v.getText()
 											.toString()));
@@ -621,30 +656,6 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 				}, mYear, mMonth, mDay);
 		dpd.getDatePicker().setCalendarViewShown(false);
 		dpd.show();
-	}
-
-	/**
-	 * 
-	 * 
-	 * @param hour
-	 * @param min
-	 * @return
-	 */
-	private int getTimeDOS(int hour, int min) {
-		return (hour << 11) | min << 5;
-	}
-
-	/**
-	 * 
-	 * 
-	 * @param year
-	 * @param mon
-	 * @param day
-	 * @return
-	 */
-	private int getDateDOS(int year, int mon, int day) {
-		return ((year - 1980) << 9 | mon << 5 | day);
-
 	}
 
 	/**
@@ -675,9 +686,9 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 	private int javaToDosTime(long jTime) {
 		Date d = new Date(jTime);
 		int year = d.getYear() + 1900;
-		if (year < 1980) {
-			return (1 << 21) | (1 << 16);
-		}
+		// if (year < 1980) {
+		// return (1 << 21) | (1 << 16);
+		// }
 		return (year - 1980) << 25 | (d.getMonth()) << 21 | (d.getDate()) << 16
 				| d.getHours() << 11 | d.getMinutes() << 5 | d.getSeconds();
 	}
@@ -700,38 +711,23 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 	 * 
 	 * @param mRule
 	 */
-	private void sendSceneToCC(int scenePos) {
-		listOfScene.get(scenePos).getListOfRules();
+	private void sendNewSceneToCC(int scenePos) {
+		// Update scene to global data structure
+		removeIfSceneExisted(listOfScene.get(scenePos).getName());
+		mContext.mActSceneList.add(listOfScene.get(scenePos));
 		BluetoothMessage btMsg = new BluetoothMessage();
-		btMsg.setLength((byte) 27);
 		btMsg.setType(BTMessageType.BLE_DATA);
+		btMsg.setIndex(mContext.mBTMsgIndex);
+		btMsg.setLength((byte) 8);
 		btMsg.setCmdIdH((byte) CommandID.SET);
-		btMsg.setCmdIdL((byte) CommandID.ACT_SCENE_WITH_INDEX);
-
-		for (int i = 0; i < listOfScene.get(scenePos).getNumOfRule(); i++) {
-			btMsg.setIndex((short) (mContext.mBTMsgIndex + i));
-			Rule_c mRule = listOfScene.get(scenePos).getRuleWithIndex(i);
-			StringBuilder mBuilder = new StringBuilder();
-			mBuilder.append(mRule.getCond());
-			if (mRule.getCond() == ConditionDef.IN_RANGE
-					|| mRule.getCond() == ConditionDef.IN_RANGE_EVDAY) {
-				mBuilder.append(mRule.getStartDateTime());
-				mBuilder.append(mRule.getEndDateTime());
-			} else {
-				mBuilder.append(mRule.getCondDevId());
-				mBuilder.append(mRule.getCondDevVal() << 16);
-			}
-			mBuilder.append(mRule.getAction());
-			mBuilder.append(mRule.getActDevId());
-			mBuilder.append(mRule.getActDevVal());
-			btMsg.setPayload(mBuilder.toString().getBytes());
-			try {
-				mContext.mProcessMsg.putBLEMessage(
-						mContext.mWriteCharacteristic, btMsg);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		btMsg.setCmdIdL((byte) CommandID.NEW_SCENE);
+		btMsg.setPayload(listOfScene.get(scenePos).getName().getBytes());
+		try {
+			mContext.mProcessMsg.putBLEMessage(mContext.mWriteCharacteristic,
+					btMsg);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 
@@ -767,9 +763,11 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 					btMsg.setIndex(mContext.mBTMsgIndex);
 					btMsg.setCmdIdH((byte) CommandID.SET);
 					btMsg.setCmdIdL((byte) CommandID.RENAME_SCENE);
-					StringBuffer payload = new StringBuffer(16);
-					payload.append(curSceneName).append(sceneName);
-					btMsg.setPayload(payload.toString().getBytes());
+					ByteBuffer payload = ByteBuffer.allocate(16);
+					payload.put(curSceneName.getBytes());
+					payload.put(sceneName.getBytes());
+					btMsg.setPayload(payload.array());
+					payload.clear();
 					try {
 						mContext.mProcessMsg.putBLEMessage(
 								mContext.mWriteCharacteristic, btMsg);
@@ -805,44 +803,50 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 	private void removeScene(int scenePos) {
 		final int pos = scenePos;
 		final String curSceneName = ((Scene_c) getGroup(scenePos)).getName();
-		AlertDialog.Builder mBuilder = new AlertDialog.Builder(mContext);
-		mBuilder.setIcon(android.R.drawable.ic_dialog_alert);
-		mBuilder.setTitle("Do you want remove scene " + curSceneName);
+		if (!((Scene_c) getGroup(scenePos)).getActived()) {
+			AlertDialog.Builder mBuilder = new AlertDialog.Builder(mContext);
+			mBuilder.setIcon(android.R.drawable.ic_dialog_alert);
+			mBuilder.setTitle("Do you want remove scene " + curSceneName);
 
-		mBuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+			mBuilder.setPositiveButton("OK",
+					new DialogInterface.OnClickListener() {
 
-			@Override
-			public void onClick(DialogInterface dialog, int which) {
-				// TODO Auto-generated method stub
-				listOfScene.remove(pos);
-				notifyDataSetChanged();
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							// TODO Auto-generated method stub
+							listOfScene.remove(pos);
+							notifyDataSetChanged();
 
-				BluetoothMessage btMsg = new BluetoothMessage();
-				btMsg.setType(BTMessageType.BLE_DATA);
-				btMsg.setIndex(mContext.mBTMsgIndex);
-				btMsg.setCmdIdH((byte) CommandID.SET);
-				btMsg.setCmdIdL((byte) CommandID.REMOVE_SCENE);
-				btMsg.setPayload(curSceneName.getBytes());
-				try {
-					mContext.mProcessMsg.putBLEMessage(
-							mContext.mWriteCharacteristic, btMsg);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		});
+							BluetoothMessage btMsg = new BluetoothMessage();
+							btMsg.setType(BTMessageType.BLE_DATA);
+							btMsg.setIndex(mContext.mBTMsgIndex);
+							btMsg.setCmdIdH((byte) CommandID.SET);
+							btMsg.setCmdIdL((byte) CommandID.REMOVE_SCENE);
+							btMsg.setPayload(curSceneName.getBytes());
+							try {
+								mContext.mProcessMsg.putBLEMessage(
+										mContext.mWriteCharacteristic, btMsg);
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
+					});
 
-		mBuilder.setNegativeButton("Cancel",
-				new DialogInterface.OnClickListener() {
+			mBuilder.setNegativeButton("Cancel",
+					new DialogInterface.OnClickListener() {
 
-					@Override
-					public void onClick(DialogInterface dialog, int which) {
-						// TODO Auto-generated method stub
-						dialog.dismiss();
-					}
-				});
-		mBuilder.show();
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							// TODO Auto-generated method stub
+							dialog.dismiss();
+						}
+					});
+			mBuilder.show();
+		} else {
+			Toast.makeText(mContext, "Can not remove running scene !",
+					Toast.LENGTH_SHORT);
+		}
 
 	}
 
@@ -875,5 +879,21 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 			}
 		}
 		return -1;
+	}
+
+	/**
+	 * Remove scene if exist
+	 * 
+	 * @param mSceneList
+	 * @param sceneName
+	 */
+	private void removeIfSceneExisted(String sceneName) {
+		for (int i = 0; i < mContext.mActSceneList.size(); i++) {
+			if (mContext.mActSceneList.get(i).getName().matches(sceneName)) {
+				Log.i(TAG, "name " + mContext.mActSceneList.get(i).getName());
+				mContext.mActSceneList.remove(i);
+				break;
+			}
+		}
 	}
 }

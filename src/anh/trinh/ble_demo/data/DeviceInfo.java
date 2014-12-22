@@ -57,47 +57,48 @@ public class DeviceInfo {
 		switch ((byte) devID) {
 
 		case DeviceTypeDef.BUTTON:
-			devName = "BUTTON";
+			devName = "Button";
 			break;
 		case DeviceTypeDef.BUZZER:
-			devName = "BUZZER";
+			devName = "Buzzer";
 			break;
 		case DeviceTypeDef.DIMMER:
-			devName = "DIMMER";
+			devName = "Dimmer";
 			break;
 		case DeviceTypeDef.GAS_SENSOR:
-			devName = "GAS SENSOR";
+			devName = "Gas Sensor";
 			break;
 		case DeviceTypeDef.LEVEL_BULB:
-			devName = "LEVEL BULB";
+			devName = "Level Bulb";
 			break;
 		case DeviceTypeDef.LUMI_SENSOR:
-			devName = "LUMI SENSOR";
+			devName = "Light Sensor";
 			break;
 		case DeviceTypeDef.ON_OFF_BULB:
-			devName = "ON OFF BULB";
+			devName = "On/Off Bulb";
 			break;
 		case DeviceTypeDef.PIR_SENSOR:
-			devName = "PIR SENSOR";
+			devName = "PIR Sensor";
 			break;
 		case DeviceTypeDef.RGB_LED:
-			devName = "RGB LED";
+			devName = "RGB Led";
 			break;
 		case DeviceTypeDef.SERVO_SG90:
-			devName = "SERVO SG90";
+			devName = "Servo SG90";
 			break;
 		case DeviceTypeDef.SWITCH:
-			devName = "SWICH";
+			devName = "Switch";
 			break;
 		case DeviceTypeDef.TEMP_SENSOR:
-			devName = "TEMP SENSOR";
+			devName = "Temp Sensor";
 			break;
 
 		default:
-			devName = "UNKNOWN DEVICE";
+			devName = "Unknown Device";
 			break;
 		}
-		devName = devName + " (" + Integer.toHexString(devID >> 8) +")";
+		devName = devName + " (" + Integer.toString(devID >> 24) + "-"
+				+ Integer.toHexString((devID  & 0x00FFFFFF) >> 8) + ")";
 		return devName;
 	}
 
