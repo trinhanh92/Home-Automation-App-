@@ -1,6 +1,7 @@
 package anh.trinh.ble_demo.data;
 
 import android.R.integer;
+import android.text.Html;
 import anh.trinh.ble_demo.R;
 
 /**
@@ -91,6 +92,9 @@ public class DeviceInfo {
 			break;
 		case DeviceTypeDef.TEMP_SENSOR:
 			devName = "Temp Sensor";
+			break;
+		case DeviceTypeDef.SOIL_HUMI:
+			devName = "Soil Humi";
 			break;
 
 		default:

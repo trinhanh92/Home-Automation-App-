@@ -12,6 +12,7 @@ public final class DeviceTypeDef {
 	public static final int TEMP_SENSOR 	= 0x30;
 	public static final int LUMI_SENSOR 	= 0x31;
 	public static final int GAS_SENSOR 		= 0x32;
+	public static final int SOIL_HUMI		= 0x33;
 	public static final int PIR_SENSOR 		= 0x38;
 	// device output
 	public static final int ON_OFF_BULB 	= 0x78;

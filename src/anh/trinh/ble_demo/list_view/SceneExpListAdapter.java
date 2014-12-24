@@ -17,9 +17,11 @@ import org.w3c.dom.Text;
 import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
 import android.app.DatePickerDialog;
+import android.app.ProgressDialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.os.CountDownTimer;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -29,6 +31,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.BaseExpandableListAdapter;
@@ -48,8 +51,10 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import anh.trinh.ble_demo.HomeActivity;
 import anh.trinh.ble_demo.R;
+import anh.trinh.ble_demo.custom_view.CustomSpinner;
 import anh.trinh.ble_demo.custom_view.DateDisplayPicker;
 import anh.trinh.ble_demo.custom_view.DeviceArrayAdapter;
+import anh.trinh.ble_demo.custom_view.NDSpinner;
 import anh.trinh.ble_demo.custom_view.TimeDisplayPicker;
 import anh.trinh.ble_demo.data.BTMessageType;
 import anh.trinh.ble_demo.data.BluetoothMessage;
@@ -62,10 +67,12 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 	private static final String TAG = "ExpandableListView";
 	private HomeActivity mContext;
 	private ArrayList<Scene_c> listOfScene;
+	private ArrayList<DeviceInfo> inDeviceList = new ArrayList<DeviceInfo>();
+	private ArrayList<DeviceInfo> outDeviceList = new ArrayList<DeviceInfo>();
 
 	public final String[] listOfCond = { "EQUAL", "LESS THAN", "LESS OR EQUAL",
 			"GREATER THAN", "GREATER OR EQUAL", "CHANGE VAL", "IN RANGE",
-			"IN RANGE EVDAY", "CHANGE VAL OVER" };
+			"IN RANGE EVDAY", "CHANGE VAL OVER THR" };
 
 	public static final String[] listOfAction = { "SET DEV VAL" };
 
@@ -96,7 +103,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 		final Rule_c mRuleObj = (Rule_c) getChild(groupPos, childPos);
 		final int scenePos = groupPos;
 		final int rulePos = childPos;
-		Log.i(TAG, "childView");
+		// Log.i(TAG, "childView");
 		if (convertView == null) {
 			LayoutInflater inf = (LayoutInflater) mContext
 					.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -113,30 +120,35 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 		final TextView mTittle2 = (TextView) convertView
 				.findViewById(R.id.tvTittle2);
 
-		Spinner mCondChoose = (Spinner) convertView
+		NDSpinner mCondChoose = (NDSpinner) convertView
 				.findViewById(R.id.mCondChoose);
-		final Spinner condDevChoose = (Spinner) convertView
+		final NDSpinner condDevChoose = (NDSpinner) convertView
 				.findViewById(R.id.condDevChoose);
 		final EditText condDevVal = (EditText) convertView
 				.findViewById(R.id.condDevVal);
 
-		final ImageButton mBtnMenu = (ImageButton) convertView
-				.findViewById(R.id.btnMenu);
-		mBtnMenu.setFocusable(false);
+		final ImageButton mBtnSave = (ImageButton) convertView
+				.findViewById(R.id.btnSave);
+		mBtnSave.setFocusable(false);
+
+		final ImageButton mBtnDel = (ImageButton) convertView
+				.findViewById(R.id.btnDel);
+		mBtnDel.setFocusable(false);
 
 		TextView mFromDate = (TextView) convertView.findViewById(R.id.fromDate);
 		TextView mFromTime = (TextView) convertView.findViewById(R.id.fromTime);
 		TextView mToDate = (TextView) convertView.findViewById(R.id.toDate);
 		TextView mToTime = (TextView) convertView.findViewById(R.id.toTime);
 
-		Spinner mActChoose = (Spinner) convertView
+		NDSpinner mActChoose = (NDSpinner) convertView
 				.findViewById(R.id.mActChoose);
-		final Spinner actDevChoose = (Spinner) convertView
+		final NDSpinner actDevChoose = (NDSpinner) convertView
 				.findViewById(R.id.actDevChoose);
 		final EditText actDevVal = (EditText) convertView
 				.findViewById(R.id.actDevVal);
 
 		// set data resource for Condition and Action spinner
+		getTypeOfDevice(mContext.mDevInfoList);
 		ArrayAdapter<String> mCondAdapter = new ArrayAdapter<String>(mContext,
 				android.R.layout.simple_spinner_item, listOfCond);
 		mCondAdapter
@@ -148,23 +160,31 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 				.setDropDownViewResource(android.R.layout.simple_list_item_single_choice);
 
 		// Choose Device
-		ArrayAdapter<String> mDevAdapter = new ArrayAdapter<String>(mContext,
-				android.R.layout.simple_spinner_item,
-				getDeviceNameList(mContext.mDevInfoList));
-		mDevAdapter
+		ArrayAdapter<String> mCondDevAdapter = new ArrayAdapter<String>(
+				mContext, android.R.layout.simple_spinner_item,
+				getDeviceNameList(inDeviceList));
+		mCondDevAdapter
+				.setDropDownViewResource(android.R.layout.simple_list_item_single_choice);
+
+		ArrayAdapter<String> mActDevAdapter = new ArrayAdapter<String>(
+				mContext, android.R.layout.simple_spinner_item,
+				getDeviceNameList(outDeviceList));
+		mActDevAdapter
 				.setDropDownViewResource(android.R.layout.simple_list_item_single_choice);
 
 		// set adapter for spinner
 		mCondChoose.setAdapter(mCondAdapter);
 		mActChoose.setAdapter(mActAdapter);
-		condDevChoose.setAdapter(mDevAdapter);
-		actDevChoose.setAdapter(mDevAdapter);
+		condDevChoose.setAdapter(mCondDevAdapter);
+		actDevChoose.setAdapter(mActDevAdapter);
 
 		mCondChoose.setOnItemSelectedListener(new OnItemSelectedListener() {
 
 			@Override
 			public void onItemSelected(AdapterView<?> arg0, View arg1, int pos,
 					long arg3) {
+				listOfScene.get(scenePos).getRuleWithIndex(rulePos)
+						.setCond(pos);
 				if ((pos == ConditionDef.IN_RANGE)
 						|| (pos == ConditionDef.IN_RANGE_EVDAY)) {
 					llDevVal.setVisibility(View.INVISIBLE);
@@ -188,14 +208,13 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 											.get(scenePos)
 											.getRuleWithIndex(rulePos)
 											.setCondDevId(
-													mContext.mDevInfoList.get(
-															pos).getDevID());
+													inDeviceList.get(pos)
+															.getDevID());
 								}
 
 								@Override
 								public void onNothingSelected(
 										AdapterView<?> arg0) {
-									// TODO Auto-generated method stub
 
 								}
 							});
@@ -213,7 +232,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 										.get(scenePos)
 										.getRuleWithIndex(rulePos)
 										.setActDevId(
-												mContext.mDevInfoList.get(pos)
+												outDeviceList.get(pos)
 														.getDevID());
 							}
 
@@ -223,9 +242,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 
 							}
 						});
-
-				listOfScene.get(scenePos).getRuleWithIndex(rulePos)
-						.setCond(pos);
+				//
 			}
 
 			@Override
@@ -257,22 +274,29 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 			mCondChoose.setSelection(mRuleObj.getCond());
 			mActChoose.setSelection(mRuleObj.getAction());
 
-			// ScenesFragment.listOfScene.get(groupPos).getRuleWithIndex(childPos)
-			// .setRuleIndex(childPos);
-			mCondChoose.setSelection(mRuleObj.getCond());
-			mActChoose.setSelection(mRuleObj.getAction());
-			actDevChoose.setSelection(findDevIndexByID(mContext.mDevInfoList,
+			actDevChoose.setSelection(findDevIndexByID(outDeviceList,
 					mRuleObj.getActDevId()));
 			actDevVal.setText(Integer.toString(mRuleObj.getActDevVal()));
+
+			condDevChoose.setSelection(findDevIndexByID(inDeviceList,
+					mRuleObj.getCondDevId()));
+			condDevVal.setText(Integer.toString(mRuleObj.getCondDevVal()));
+
 			if (llTimeRange.getVisibility() == View.VISIBLE) {
 				SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd");
 				SimpleDateFormat stf = new SimpleDateFormat("HH:mm");
-				mFromDate.setText(sdf.format(new Date(dosToJavaTime(mRuleObj
-						.getStartDate()))));
+
+				if (mRuleObj.getCond() == ConditionDef.IN_RANGE_EVDAY) {
+					mFromDate.setText("--");
+					mToDate.setText("--");
+				} else {
+					mFromDate.setText(sdf.format(new Date(
+							dosToJavaTime(mRuleObj.getStartDate()))));
+					mToDate.setText(sdf.format(new Date(dosToJavaTime(mRuleObj
+							.getEndDate()))));
+				}
 				mFromTime.setText(stf.format(new Time(dosToJavaTime(mRuleObj
 						.getStartTime()))));
-				mToDate.setText(sdf.format(new Date(dosToJavaTime(mRuleObj
-						.getEndDate()))));
 				mToTime.setText(stf.format(new Time(dosToJavaTime(mRuleObj
 						.getEndTime()))));
 
@@ -312,19 +336,76 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 					}
 				});
 			}
-			condDevChoose.setSelection(getDeviceIndex(mContext.mDevInfoList,
-					mRuleObj.getCondDevId()));
-			condDevVal.setText(Integer.toString(mRuleObj.getCondDevVal()));
 		}
 
-		mBtnMenu.setOnClickListener(new OnClickListener() {
+		mBtnSave.setOnClickListener(new OnClickListener() {
 
 			@Override
-			public void onClick(View v) {
-				showRuleMenuPopup(mBtnMenu, mContext, rulePos, scenePos,
-						condDevVal, actDevVal);
+			public void onClick(View arg0) {
+				// TODO Auto-generated method stub
+				if (!condDevVal.getText().toString().matches("")) {
+					((Rule_c) getChild(scenePos, rulePos)).setCondDevVal(Short
+							.valueOf(condDevVal.getText().toString()));
+				} else {
+					((Rule_c) getChild(scenePos, rulePos))
+							.setCondDevVal((short) 0);
+				}
+				if (!actDevVal.getText().toString().matches("")) {
+					((Rule_c) getChild(scenePos, rulePos)).setActDevVal(Short
+							.valueOf(actDevVal.getText().toString()));
+				} else {
+					((Rule_c) getChild(scenePos, rulePos))
+							.setActDevVal((short) 0);
+				}
+				Toast.makeText(mContext.getApplicationContext(), "saved rule",
+						Toast.LENGTH_SHORT).show();
 			}
 		});
+
+		mBtnDel.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View arg0) {
+				AlertDialog.Builder mBuiler = new AlertDialog.Builder(mContext);
+				mBuiler.setTitle("Do you want to delete this rule?");
+				mBuiler.setPositiveButton("OK",
+						new DialogInterface.OnClickListener() {
+
+							@Override
+							public void onClick(DialogInterface dialog,
+									int which) {
+								// TODO Auto-generated method stub
+								listOfScene.get(scenePos).getListOfRules()
+										.remove(rulePos);
+								notifyDataSetChanged();
+								Toast.makeText(
+										mContext.getApplicationContext(),
+										"deleted rule", Toast.LENGTH_SHORT)
+										.show();
+							}
+						});
+				mBuiler.setNegativeButton("Cancel",
+						new DialogInterface.OnClickListener() {
+
+							@Override
+							public void onClick(DialogInterface dialog,
+									int which) {
+								// TODO Auto-generated method stub
+								dialog.dismiss();
+							}
+						});
+				mBuiler.show();
+
+			}
+		});
+		// mBtnMenu.setOnClickListener(new OnClickListener() {
+		//
+		// @Override
+		// public void onClick(View v) {
+		// showRuleMenuPopup(mBtnMenu, mContext, rulePos, scenePos,
+		// condDevVal, actDevVal);
+		// }
+		// });
 		return convertView;
 	}
 
@@ -357,7 +438,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 			View convertView, ViewGroup parent) {
 		// TODO Auto-generated method stub
 		Scene_c sceneObj = (Scene_c) getGroup(groupPos);
-		Log.i(TAG, "groupView");
+		// Log.i(TAG, "groupView");
 		final int scenePos = groupPos;
 		if (convertView == null) {
 			convertView = LayoutInflater.from(mContext).inflate(
@@ -424,9 +505,11 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 	private int findDevIndexByID(ArrayList<DeviceInfo> listOfDev, int devID) {
 		for (int i = 0; i < listOfDev.size(); i++) {
 			if (listOfDev.get(i).getDevID() == devID) {
+				// Log.i(TAG, "found devID:" + Integer.toHexString(devID));
 				return i;
 			}
 		}
+		// Log.i(TAG, "not found devID:" + Integer.toHexString(devID));
 		return -1;
 	}
 
@@ -576,9 +659,9 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 											.setStartTime(javaToDosTime(stf
 													.parse(getTimeString)
 													.getTime()));
-									Log.i(TAG, "time time");
-									System.out.println(stf.parse(v.getText()
-											.toString()));
+									// Log.i(TAG, "time time");
+									// System.out.println(stf.parse(v.getText()
+									// .toString()));
 								} catch (ParseException e) {
 									// TODO Auto-generated catch block
 									e.printStackTrace();
@@ -630,8 +713,8 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 											.setStartDate(javaToDosTime(sdf
 													.parse(getTimeString)
 													.getTime()));
-									Log.i(TAG, "time time");
-									System.out.println(sdf.parse(getTimeString));
+									// Log.i(TAG, "time time");
+									// System.out.println(sdf.parse(getTimeString));
 								} catch (ParseException e) {
 									// TODO Auto-generated catch block
 									e.printStackTrace();
@@ -642,9 +725,9 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 											.setEndDate(javaToDosTime(sdf
 													.parse(getTimeString)
 													.getTime()));
-									Log.i(TAG, "time time");
-									System.out.println(sdf.parse(v.getText()
-											.toString()));
+									// Log.i(TAG, "time time");
+									// System.out.println(sdf.parse(v.getText()
+									// .toString()));
 								} catch (ParseException e) {
 									// TODO Auto-generated catch block
 									e.printStackTrace();
@@ -701,8 +784,8 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 	private void addNewRule(int scenePos) {
 		Rule_c mRule = new Rule_c();
 		listOfScene.get(scenePos).addRule(mRule);
-		Log.i("ExpandableList",
-				Integer.toString(listOfScene.get(scenePos).getNumOfRule()));
+		// Log.i("ExpandableList",
+		// Integer.toString(listOfScene.get(scenePos).getNumOfRule()));
 		notifyDataSetChanged();
 	}
 
@@ -713,8 +796,10 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 	 */
 	private void sendNewSceneToCC(int scenePos) {
 		// Update scene to global data structure
+		mContext.mProgDialog = ProgressDialog.show(mContext, null,
+				"saving scene");
 		removeIfSceneExisted(listOfScene.get(scenePos).getName());
-		mContext.mActSceneList.add(listOfScene.get(scenePos));
+		mContext.mSceneList.add(listOfScene.get(scenePos));
 		BluetoothMessage btMsg = new BluetoothMessage();
 		btMsg.setType(BTMessageType.BLE_DATA);
 		btMsg.setIndex(mContext.mBTMsgIndex);
@@ -729,6 +814,26 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+
+		new CountDownTimer(10500, 10500) {
+
+			@Override
+			public void onTick(long millisUntilFinished) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void onFinish() {
+				if (mContext.mProgDialog.isShowing()) {
+					mContext.mProgDialog.dismiss();
+					Toast.makeText(mContext.getApplicationContext(),
+							"save scene not success", Toast.LENGTH_SHORT)
+							.show();
+				}
+
+			}
+		};
 	}
 
 	/**
@@ -739,14 +844,43 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 	private void renameSceneDialog(int scenePos) {
 		final int pos = scenePos;
 		final String curSceneName = ((Scene_c) getGroup(scenePos)).getName();
-
+		if (mContext.mSceneList.get(scenePos).getActived()) {
+			Toast.makeText(mContext, "Can not rename running scene !",
+					Toast.LENGTH_SHORT).show();
+			return;
+		}
 		AlertDialog.Builder mBuilder = new AlertDialog.Builder(mContext);
 		mBuilder.setIcon(android.R.drawable.ic_dialog_alert);
 		mBuilder.setTitle("Do you want rename scene " + curSceneName);
 		mBuilder.setMessage("Please, enter Scene's name!");
 
 		final EditText input = new EditText(mContext);
-		input.setText(curSceneName);
+		input.setHint("name can not over 8 characters");
+		input.addTextChangedListener(new TextWatcher() {
+
+			@Override
+			public void onTextChanged(CharSequence arg0, int arg1, int arg2,
+					int arg3) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void beforeTextChanged(CharSequence arg0, int arg1,
+					int arg2, int arg3) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void afterTextChanged(Editable s) {
+				// TODO Auto-generated method stub
+				if (s.length() > 8) {
+					input.setText("");
+					input.setHint("name can not over 8 characters");
+				}
+			}
+		});
 		mBuilder.setView(input);
 
 		mBuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
@@ -755,8 +889,14 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 			public void onClick(DialogInterface dialog, int whichButton) {
 				// TODO Auto-generated method stub
 				String sceneName = input.getText().toString();
-				if (!sceneName.matches(curSceneName)) {
+				if (!sceneName.matches(curSceneName) && !sceneName.isEmpty()) {
+					if (sceneName.length() < 8) {
+						for (int i = 0; i < (8 - sceneName.length()); i++) {
+							sceneName.concat("\0");
+						}
+					}
 					listOfScene.get(pos).setName(sceneName);
+					mContext.mSceneList.get(pos).setName(sceneName);
 					notifyDataSetChanged();
 					BluetoothMessage btMsg = new BluetoothMessage();
 					btMsg.setType(BTMessageType.BLE_DATA);
@@ -803,7 +943,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 	private void removeScene(int scenePos) {
 		final int pos = scenePos;
 		final String curSceneName = ((Scene_c) getGroup(scenePos)).getName();
-		if (!((Scene_c) getGroup(scenePos)).getActived()) {
+		if (!mContext.mSceneList.get(scenePos).getActived()) {
 			AlertDialog.Builder mBuilder = new AlertDialog.Builder(mContext);
 			mBuilder.setIcon(android.R.drawable.ic_dialog_alert);
 			mBuilder.setTitle("Do you want remove scene " + curSceneName);
@@ -815,6 +955,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 						public void onClick(DialogInterface dialog, int which) {
 							// TODO Auto-generated method stub
 							listOfScene.remove(pos);
+							// mContext.mSceneList.remove(pos);
 							notifyDataSetChanged();
 
 							BluetoothMessage btMsg = new BluetoothMessage();
@@ -845,7 +986,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 			mBuilder.show();
 		} else {
 			Toast.makeText(mContext, "Can not remove running scene !",
-					Toast.LENGTH_SHORT);
+					Toast.LENGTH_SHORT).show();
 		}
 
 	}
@@ -888,12 +1029,29 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 	 * @param sceneName
 	 */
 	private void removeIfSceneExisted(String sceneName) {
-		for (int i = 0; i < mContext.mActSceneList.size(); i++) {
-			if (mContext.mActSceneList.get(i).getName().matches(sceneName)) {
-				Log.i(TAG, "name " + mContext.mActSceneList.get(i).getName());
-				mContext.mActSceneList.remove(i);
+		for (int i = 0; i < mContext.mSceneList.size(); i++) {
+			if (mContext.mSceneList.get(i).getName().matches(sceneName)) {
+				Log.i(TAG, "name " + mContext.mSceneList.get(i).getName());
+				mContext.mSceneList.remove(i);
 				break;
 			}
 		}
+	}
+
+	/**
+	 * 
+	 * @param mDevList
+	 */
+	private void getTypeOfDevice(ArrayList<DeviceInfo> mDevList) {
+		this.inDeviceList.clear();
+		this.outDeviceList.clear();
+		for (int i = 0; i < mDevList.size(); i++) {
+			if ((((byte) mDevList.get(i).getDevID()) & 0x40) != 0) {
+				this.outDeviceList.add(mDevList.get(i));
+			} else {
+				this.inDeviceList.add(mDevList.get(i));
+			}
+		}
+
 	}
 }

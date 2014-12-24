@@ -8,8 +8,8 @@
         android:color="@color/grey100"/>
     <corners android:radius="8dp"/>
     <size 
-        android:width="35dp"
-        android:height="35dp" />
+        android:width="30dp"
+        android:height="30dp" />
 
 	</shape>
 </item>
@@ -23,8 +23,8 @@
     <solid 
         android:color="@color/background_grey"/>
     <size 
-        android:width="35dp"
-        android:height="35dp" />
+        android:width="30dp"
+        android:height="30dp" />
 
 	</shape>
 </item>

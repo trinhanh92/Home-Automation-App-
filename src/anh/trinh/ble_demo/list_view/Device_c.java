@@ -65,11 +65,15 @@ public class Device_c {
 		case DeviceTypeDef.RGB_LED:
 			this.name = "RGB Led";
 			break;
+		case DeviceTypeDef.SOIL_HUMI:
+			this.name = "Soil Moiter";
+			break;
 		default:
 			this.name = "Unknown Device";
 			break;
 		}
-
+		this.name += " (" + Integer.toString(devID >> 24) + "-"
+				+ Integer.toHexString((devID  & 0x00FFFFFF) >> 8) + ")";
 	}
 	
 	public void setID(int devID){

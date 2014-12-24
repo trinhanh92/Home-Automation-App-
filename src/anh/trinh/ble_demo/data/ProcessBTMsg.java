@@ -36,6 +36,7 @@ import android.os.Handler;
 import android.os.Handler.Callback;
 import android.os.Message;
 import android.util.Log;
+import android.widget.Toast;
 import anh.trinh.ble_demo.BluetoothLeService;
 import anh.trinh.ble_demo.DeviceControlFragment;
 import anh.trinh.ble_demo.HomeActivity;
@@ -60,10 +61,10 @@ public class ProcessBTMsg {
 	 */
 	public BluetoothMessage getBLEMessage(Intent intent) {
 		byte[] recBuf = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
-		for (int i = 0; i < recBuf.length; i++) {
-			System.out.printf("%d ", recBuf[i]);
-		}
-		System.out.println();
+//		for (int i = 0; i < recBuf.length; i++) {
+//			System.out.printf("%d ", recBuf[i]);
+//		}
+//		System.out.println();
 
 		BluetoothMessage msg = parseBTMessage(recBuf);
 		return msg;
@@ -96,11 +97,11 @@ public class ProcessBTMsg {
 		}
 		characteristic.setValue(sendBuf.array());
 
-		 System.out.println("data send to BLE");
-		 for (int i = 0; i < msg.getLength() + 6; i++) {
-		 System.out.printf("%d ", sendBuf.array()[i]);
-		 }
-		 System.out.println();
+		System.out.println("data send to BLE");
+//		for (int i = 0; i < msg.getLength() + 6; i++) {
+//			System.out.printf("%d ", sendBuf.array()[i]);
+//		}
+//		System.out.println();
 		sendBuf.clear();
 
 		mContext.mBTMsgIndex++;
@@ -250,14 +251,20 @@ public class ProcessBTMsg {
 			Log.i(TAG, "remove scene");
 			break;
 		case CommandID.NEW_SCENE:
-			String sceneName = new String(DataConversion.getBytesFromArray(
-					0, 8, btMsg.getPayload()));
-//			if()
-			break;
-
-		default:
-			Log.e(TAG, "Command ID invalid");
-			break;
+			Log.i(TAG, "New scene");
+			mContext.mProgDialog.dismiss();
+			String sceneName = new String(DataConversion.getBytesFromArray(0,
+					8, btMsg.getPayload()));
+			if (sceneName.matches(mContext.mSceneList.get(
+					mContext.mSceneList.size() - 1).getName())) {
+				Toast.makeText(mContext, "Add new scene successfully!",
+						Toast.LENGTH_SHORT).show();
+			} else {
+				Toast.makeText(mContext, "Can not add new scene!",
+						Toast.LENGTH_SHORT).show();
+				mContext.mSceneList
+						.remove(mContext.mSceneList.size() - 1);
+			}
 		}
 		// Clear buffer
 		dataBuf.clear();
@@ -270,7 +277,7 @@ public class ProcessBTMsg {
 	 */
 	private void sendNumOfRule(String sceneName) {
 		Scene_c scene = getSceneWithName(sceneName);
-		if(scene == null){
+		if (scene == null) {
 			Log.i(TAG, "scene not exist");
 			return;
 		}
@@ -304,7 +311,7 @@ public class ProcessBTMsg {
 		// scene all rule if index = 0xffff
 		if (ruleIndex == -1) {
 			for (int i = 0; i < scene.getNumOfRule(); i++) {
-				Log.i(TAG, "send rule with index " + i);
+//				Log.i(TAG, "send rule with index " + i);
 				Rule_c mRule = mRuleList.get(i);
 				BluetoothMessage mMsg = new BluetoothMessage();
 				mMsg.setType(BTMessageType.BLE_DATA);
@@ -395,19 +402,19 @@ public class ProcessBTMsg {
 		int actDevID = dataBuf.getInt(21);
 		short actDevVal = dataBuf.getShort(25);
 
-		for (int i = 0; i < mContext.mActSceneList.size(); i++) {
-			if (sceneName.matches(mContext.mActSceneList.get(i).getName())) {
+		for (int i = 0; i < mContext.mSceneList.size(); i++) {
+			if (sceneName.matches(mContext.mSceneList.get(i).getName())) {
 				Rule_c mNewRule = new Rule_c();
 				mNewRule.setRuleIndex(ruleIndex);
 				mNewRule.setCond(condition);
-				mNewRule.setActDevId(condDevID);
-				mNewRule.setActDevVal(condDevVal);
+				mNewRule.setCondDevId(condDevID);
+				mNewRule.setCondDevVal(condDevVal);
 				mNewRule.setAction(action);
 				mNewRule.setStartDateTime(timeStart);
 				mNewRule.setEndDateTime(timeStop);
 				mNewRule.setActDevId(actDevID);
 				mNewRule.setActDevVal(actDevVal);
-				mContext.mActSceneList.get(i).addRule(mNewRule);
+				mContext.mSceneList.get(i).addRule(mNewRule);
 				break;
 			}
 		}
@@ -431,9 +438,9 @@ public class ProcessBTMsg {
 			Scene_c newSceneObj = new Scene_c();
 			newSceneObj.setIndex(sceneIndex);
 			newSceneObj.setName(sceneName);
-			Log.i(TAG, sceneName);
+//			Log.i(TAG, sceneName);
 			newSceneObj.setActived(isActived);
-			mContext.mActSceneList.add(newSceneObj);
+			mContext.mSceneList.add(newSceneObj);
 		}
 
 	}
@@ -455,7 +462,9 @@ public class ProcessBTMsg {
 			newDev.setDevIdx(devIndex);
 			newDev.setDevID(devID);
 			newDev.setDevVal(devVal);
-			mContext.mDevInfoList.add(newDev);
+			if(!isDeviceExist(mContext.mDevInfoList, devID)){
+				mContext.mDevInfoList.add(newDev);
+			}
 
 		}
 		return mDevList;
@@ -479,9 +488,9 @@ public class ProcessBTMsg {
 	}
 
 	private Scene_c getSceneWithName(String sceneName) {
-		for (int i = 0; i < mContext.mActSceneList.size(); i++) {
-			if (mContext.mActSceneList.get(i).getName().matches(sceneName)) {
-				return mContext.mActSceneList.get(i);
+		for (int i = 0; i < mContext.mSceneList.size(); i++) {
+			if (mContext.mSceneList.get(i).getName().matches(sceneName)) {
+				return mContext.mSceneList.get(i);
 			}
 		}
 		return null;

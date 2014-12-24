@@ -11,8 +11,8 @@
         android:layout_height="match_parent"
         android:paddingLeft="15dp"
         android:paddingRight="15dp"
-        android:dividerHeight="4dp"
-        android:childDivider="@color/background_grey"
+        android:dividerHeight="6dp"
+        android:childDivider="@color/accent_pink"
         android:scrollbars="none" >
     </ExpandableListView>
 

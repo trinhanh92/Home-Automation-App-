@@ -12,6 +12,6 @@
 	    android:title="Remove scene"/>
 	<item
 	    android:id="@+id/Save"
-	    android:title="Save"/>
+	    android:title="Save scene"/>
 
 </menu>

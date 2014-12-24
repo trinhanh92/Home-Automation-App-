@@ -5,7 +5,10 @@ import java.util.ArrayList;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.support.v4.app.Fragment;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,6 +19,12 @@ import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ExpandableListView;
+import android.widget.ExpandableListView.OnGroupExpandListener;
+import android.widget.Toast;
+import anh.trinh.ble_demo.data.BTMessageType;
+import anh.trinh.ble_demo.data.BluetoothMessage;
+import anh.trinh.ble_demo.data.CommandID;
+import anh.trinh.ble_demo.data.DataConversion;
 import anh.trinh.ble_demo.list_view.SceneExpListAdapter;
 import anh.trinh.ble_demo.list_view.Scene_c;
 
@@ -24,6 +33,7 @@ public class ScenesFragment extends Fragment {
 	private Button btnAddScene;
 	private ExpandableListView mSceneExpList;
 	private SceneExpListAdapter mAdapter;
+	private HomeActivity mContext;
 	public ArrayList<Scene_c> listOfScene = new ArrayList<Scene_c>();
 
 	@Override
@@ -41,23 +51,32 @@ public class ScenesFragment extends Fragment {
 		mSceneExpList.setAdapter(mAdapter);
 		mSceneExpList.setGroupIndicator(null);
 
-		// listener child long click
-		mSceneExpList.setOnItemLongClickListener(new OnItemLongClickListener() {
-
-			@Override
-			public boolean onItemLongClick(AdapterView<?> parent, View view,
-					int position, long id) {
-				Log.i("SceneFragment", "longClick");
-				if (ExpandableListView.getPackedPositionType(id) == ExpandableListView.PACKED_POSITION_TYPE_CHILD) {
-					int groupPosition = ExpandableListView.getPackedPositionGroup(id);
-					int childPosition = ExpandableListView.getPackedPositionChild(id);
-					listOfScene.get(groupPosition).getListOfRules().remove(childPosition);
-					mAdapter.notifyDataSetChanged();
-					return true;
-				}
-				return false;
-			}
-		});
+		// listen group expand to get rule list of inactive scene
+//		mSceneExpList.setOnGroupExpandListener(new OnGroupExpandListener() {
+//
+//			@Override
+//			public void onGroupExpand(int groupPosition) {
+//				// TODO Auto-generated method stub
+//				if ((listOfScene.get(groupPosition).getNumOfRule() == 0)
+//						&& !listOfScene.get(groupPosition).getActived()) {
+//					BluetoothMessage btMsg = new BluetoothMessage();
+//					btMsg.setType(BTMessageType.BLE_DATA);
+//					btMsg.setIndex(mContext.mBTMsgIndex);
+//					btMsg.setLength((byte) 2);
+//					btMsg.setCmdIdH((byte) CommandID.GET);
+//					btMsg.setCmdIdL((byte) CommandID.RULE_WITH_INDEX);
+//					btMsg.setPayload(new byte[] {(byte) 0xFF, (byte) 0xFF});
+//					try {
+//						mContext.mProcessMsg.putBLEMessage(mContext.mWriteCharacteristic, btMsg);
+//					} catch (InterruptedException e) {
+//						// TODO Auto-generated catch block
+//						e.printStackTrace();
+//					}
+//					
+//					timeout_receive_rule(5000);
+//				}
+//			}
+//		});
 
 		//
 		btnAddScene.setOnClickListener(new OnClickListener() {
@@ -73,6 +92,31 @@ public class ScenesFragment extends Fragment {
 				mBuilder.setMessage("Please, enter Scene's name!");
 
 				final EditText input = new EditText(getActivity());
+				input.addTextChangedListener(new TextWatcher() {
+
+					@Override
+					public void onTextChanged(CharSequence s, int start,
+							int before, int count) {
+						// TODO Auto-generated method stub
+
+					}
+
+					@Override
+					public void beforeTextChanged(CharSequence s, int start,
+							int count, int after) {
+						// TODO Auto-generated method stub
+
+					}
+
+					@Override
+					public void afterTextChanged(Editable s) {
+						// TODO Auto-generated method stub
+						if (s.length() > 8) {
+							input.setText("");
+							input.setHint("name can not over 8 characters");
+						}
+					}
+				});
 				mBuilder.setView(input);
 
 				mBuilder.setPositiveButton("OK",
@@ -84,6 +128,12 @@ public class ScenesFragment extends Fragment {
 								// TODO Auto-generated method stub
 								String sceneName = input.getText().toString();
 								if (!sceneName.isEmpty()) {
+									if (sceneName.length() < 8) {
+										for (int i = 0; i < (8 - sceneName
+												.length()); i++) {
+											sceneName.concat("\0");
+										}
+									}
 									Scene_c mScene = new Scene_c();
 									mScene.setName(sceneName);
 									listOfScene.add(mScene);
@@ -108,6 +158,24 @@ public class ScenesFragment extends Fragment {
 		});
 
 		return rootView;
+	}
+
+	// time out to receive rule inactive scene
+	protected void timeout_receive_rule(int timeout) {
+		new CountDownTimer(timeout, timeout) {
+			
+			@Override
+			public void onTick(long millisUntilFinished) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void onFinish() {
+				updateSceneUI(mContext.mSceneList);
+			}
+		};
+		
 	}
 
 	public void updateSceneUI(ArrayList<Scene_c> listOfScene) {

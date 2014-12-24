@@ -14,11 +14,20 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="right">
-        <ImageButton 
-            android:id="@+id/btnMenu"
+
+        <ImageButton
+            android:id="@+id/btnDel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/btn_menu"
+            android:layout_marginRight="5dp"
+            android:background="@drawable/btn_rule_menu_selector"
+            android:src="@drawable/btn_delete" />
+
+        <ImageButton 
+            android:id="@+id/btnSave"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/btn_save"
             android:background="@drawable/btn_rule_menu_selector"
             />
     </TableRow>
@@ -63,7 +72,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content" >
 
-        <Spinner
+        <anh.trinh.ble_demo.custom_view.NDSpinner
             android:id="@+id/mCondChoose"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -81,7 +90,7 @@
                 android:visibility="invisible"
                 android:weightSum="1" >
 
-                <Spinner
+                <anh.trinh.ble_demo.custom_view.NDSpinner
                     android:id="@+id/condDevChoose"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -155,7 +164,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content" >
 
-        <Spinner
+        <anh.trinh.ble_demo.custom_view.NDSpinner
             android:id="@+id/mActChoose"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -168,7 +177,7 @@
             android:layout_weight="2"
             android:weightSum="1" >
 
-            <Spinner
+            <anh.trinh.ble_demo.custom_view.NDSpinner
                 android:id="@+id/actDevChoose"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"

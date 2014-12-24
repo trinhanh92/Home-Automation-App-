@@ -34,13 +34,12 @@
         android:layout_centerVertical="true"
         android:layout_toRightOf="@+id/devIcon"
         android:layout_marginLeft="5dp"
-        android:background="@drawable/io_info_style"
+        android:background="@drawable/input_dev_indicate"
         android:gravity="center_vertical|center_horizontal"
         android:text="IO"
         android:textAllCaps="true"
         android:textColor="@color/white"
-        android:textSize="20sp"
-        android:textStyle="bold" />
+        android:textSize="13sp"/>
 
     <TextView
         android:id="@+id/devName"
