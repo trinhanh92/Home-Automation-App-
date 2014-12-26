@@ -34,5 +34,7 @@
     <string name="end">end</string>
     <string name="from">From</string>
     <string name="to">To</string>
+    <string name="device">Device</string>
+    <string name="value">Value</string>
 
 </resources>

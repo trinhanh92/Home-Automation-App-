@@ -169,12 +169,7 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 				mMsg.setCmdIdH((byte) CommandID.GET);
 				mMsg.setCmdIdL((byte) CommandID.DEV_WITH_INDEX);
 				mMsg.setPayload(DataConversion.int2ByteArr(0xFFFFFFFF));
-				try {
-					mProcessMsg.putBLEMessage(mWriteCharacteristic, mMsg);
-				} catch (InterruptedException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
+				mProcessMsg.putBLEMessage(mWriteCharacteristic, mMsg);
 				Log.i(TAG, "send DEV WITH INDEX");
 
 				break;
@@ -183,12 +178,7 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 				Log.i(TAG, "Received Msg");
 				break;
 			case CommandID.DEV_VAL:
-				try {
-					mProcessMsg.putBLEMessage(mWriteCharacteristic, btMsg);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				mProcessMsg.putBLEMessage(mWriteCharacteristic, btMsg);
 				break;
 			case CommandID.NUM_OF_SCENES:
 				// Request to get active scene
@@ -198,12 +188,7 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 				mMsg.setCmdIdH((byte) CommandID.GET);
 				mMsg.setCmdIdL((byte) CommandID.ACT_SCENE_WITH_INDEX);
 				mMsg.setPayload(new byte[] { (byte) 0xFF });
-				try {
-					mProcessMsg.putBLEMessage(mWriteCharacteristic, mMsg);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				mProcessMsg.putBLEMessage(mWriteCharacteristic, mMsg);
 
 				break;
 
@@ -422,11 +407,13 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 		// Step1: Request number of device
 		requestNumOfDev(200);
 		// Step2: After timeout request device with index if missed
-		requestDevIndexAgain(startTime + 7000);
+//		requestDevIndexAgain(1000);
+		
+		requestDevIndexAgain(startTime + 7500);
 		// TODO: Step3: Request Zone name;
 
 		// Step4: Display Device List
-		showDeviceListUI(startTime + 8000);
+		showDeviceListUI(startTime + 8500);
 		// Step5: Request number of scene
 		requestNumOfScene(startTime + 9000);
 		// TODO: Step7: Request Num of Rule
@@ -435,9 +422,9 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 		// TODO: Step7: Request Rule with index again if missed
 		// requestRuleIndexAgain(startTime + 2000);
 		// Step9: Request inactscene list
-		// requestInactiveScene(startTime + 2300);
+		 requestInactiveScene(startTime + 14000);
 		// Step10: Display Scene List
-		showSceneListUI(startTime + 14500);
+		showSceneListUI(startTime + 16000);
 
 	}
 
@@ -546,12 +533,7 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 				msg.setLength((byte) 0);
 				msg.setCmdIdH((byte) CommandID.GET);
 				msg.setCmdIdL((byte) CommandID.NUM_OF_DEVS);
-				try {
-					mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
 				Log.i(TAG, "Get num of dev");
 			}
 		}.start();
@@ -603,13 +585,8 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 							btMsg.setCmdIdH((byte) CommandID.GET);
 							btMsg.setCmdIdL((byte) CommandID.DEV_WITH_INDEX);
 							btMsg.setPayload(DataConversion.int2ByteArr(i));
-							try {
-								mProcessMsg.putBLEMessage(mWriteCharacteristic,
-										btMsg);
-							} catch (InterruptedException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
+							mProcessMsg.putBLEMessage(mWriteCharacteristic,
+									btMsg);
 						}
 					}
 				}
@@ -636,12 +613,7 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 				msg.setLength((byte) 0);
 				msg.setCmdIdH((byte) CommandID.GET);
 				msg.setCmdIdL((byte) CommandID.NUM_OF_SCENES);
-				try {
-					mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
 
 			}
 		}.start();
@@ -667,12 +639,7 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 				mMsg.setCmdIdH((byte) CommandID.GET);
 				mMsg.setCmdIdL((byte) CommandID.INACT_SCENE_WITH_INDEX);
 				mMsg.setPayload(new byte[] { (byte) 0xFF });
-				try {
-					mProcessMsg.putBLEMessage(mWriteCharacteristic, mMsg);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				mProcessMsg.putBLEMessage(mWriteCharacteristic, mMsg);
 
 			}
 		}.start();
@@ -706,12 +673,7 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 					payloadBuf.put((byte) 0xFF);
 					msg.setPayload(payloadBuf.array());
 					payloadBuf.clear();
-					try {
-						mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+					mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
 				}
 				backupSceneList(HomeActivity.this);
 			}
@@ -746,13 +708,8 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 							btMsg.setCmdIdH((byte) CommandID.GET);
 							btMsg.setCmdIdL((byte) CommandID.DEV_WITH_INDEX);
 							btMsg.setPayload(DataConversion.int2ByteArr(i));
-							try {
-								mProcessMsg.putBLEMessage(mWriteCharacteristic,
-										btMsg);
-							} catch (InterruptedException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
+							mProcessMsg.putBLEMessage(mWriteCharacteristic,
+									btMsg);
 						}
 					}
 				}
@@ -783,13 +740,8 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 							btMsg.setCmdIdH((byte) CommandID.GET);
 							btMsg.setCmdIdL((byte) CommandID.ACT_SCENE_WITH_INDEX);
 							btMsg.setPayload(DataConversion.int2ByteArr(i));
-							try {
-								mProcessMsg.putBLEMessage(mWriteCharacteristic,
-										btMsg);
-							} catch (InterruptedException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
+							mProcessMsg.putBLEMessage(mWriteCharacteristic,
+									btMsg);
 						}
 					}
 				}

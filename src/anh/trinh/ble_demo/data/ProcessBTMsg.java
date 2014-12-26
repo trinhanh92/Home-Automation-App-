@@ -61,10 +61,10 @@ public class ProcessBTMsg {
 	 */
 	public BluetoothMessage getBLEMessage(Intent intent) {
 		byte[] recBuf = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
-//		for (int i = 0; i < recBuf.length; i++) {
-//			System.out.printf("%d ", recBuf[i]);
-//		}
-//		System.out.println();
+		for (int i = 0; i < recBuf.length; i++) {
+			System.out.printf("%d ", recBuf[i]);
+		}
+		System.out.println();
 
 		BluetoothMessage msg = parseBTMessage(recBuf);
 		return msg;
@@ -79,7 +79,7 @@ public class ProcessBTMsg {
 	 * @return
 	 */
 	public void putBLEMessage(BluetoothGattCharacteristic characteristic,
-			BluetoothMessage msg) throws InterruptedException {
+			BluetoothMessage msg){
 		int timeout;
 		ByteBuffer sendBuf = ByteBuffer.allocate(msg.getLength() + 6);
 		sendBuf.put(msg.getType());
@@ -107,7 +107,13 @@ public class ProcessBTMsg {
 		mContext.mBTMsgIndex++;
 		synchronized (mContext.mWriteSuccess) {
 			if (!mContext.mWrited) {
-				mContext.mWriteSuccess.wait(timeout);
+//				mContext.mWriteSuccess.wait(timeout);
+				try {
+					mContext.mWriteSuccess.wait(timeout);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		}
 		mContext.mBluetoothLeService.writeCharacteristic(characteristic);
@@ -122,18 +128,24 @@ public class ProcessBTMsg {
 	 */
 	public void sendBLEMessageACK(BluetoothGattCharacteristic characteristic,
 			short msgIndex) {
+		Log.i(TAG, "send ACK " + msgIndex);
 		ByteBuffer sendBuf = ByteBuffer.allocate(4);
 		sendBuf.put(BTMessageType.BLE_ACK);
 		sendBuf.put(DataConversion.short2ByteArr(msgIndex));
 		sendBuf.put((byte) 0);
 		characteristic.setValue(sendBuf.array());
-
-		// System.out.println("data ACK to BLE");
-		// for (int i = 0; i < sendBuf.array().length; i++) {
-		// System.out.printf("%d ", sendBuf.array()[i]);
-		// }
-		// System.out.println();
 		sendBuf.clear();
+		
+		synchronized (mContext.mWriteSuccess) {
+			if (!mContext.mWrited) {
+				try {
+					mContext.mWriteSuccess.wait(100);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
 		mContext.mBluetoothLeService.writeCharacteristic(characteristic);
 		mContext.mWrited = false;
 	}
@@ -147,7 +159,7 @@ public class ProcessBTMsg {
 	public BluetoothMessage parseBTMessage(byte[] msgBuf) {
 		BluetoothMessage BTMsg;
 		byte msgType = msgBuf[0];
-		short msgIndex = DataConversion.byteArr2Short(msgBuf[1], msgBuf[2]);
+		final short msgIndex = DataConversion.byteArr2Short(msgBuf[1], msgBuf[2]);
 		if (msgType == BTMessageType.BLE_ACK) {
 			byte msgLen = msgBuf[3];
 			BTMsg = new BluetoothMessage();
@@ -156,7 +168,7 @@ public class ProcessBTMsg {
 			BTMsg.setLength(msgLen);
 
 		} else {
-			// sendBLEMessageACK(mContext.mWriteCharacteristic, msgIndex);
+			sendBLEMessageACK(mContext.mWriteCharacteristic, msgIndex);
 			byte msgLen = msgBuf[3];
 			byte cmdIdH = msgBuf[4];
 			byte cmdIdL = msgBuf[5];
@@ -292,12 +304,7 @@ public class ProcessBTMsg {
 		payload.putShort((short) scene.getNumOfRule());
 		mMsg.setPayload(payload.array());
 		payload.clear();
-		try {
-			putBLEMessage(mContext.mWriteCharacteristic, mMsg);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		putBLEMessage(mContext.mWriteCharacteristic, mMsg);
 	}
 
 	private void sendRuleList(String sceneName, short ruleIndex) {
@@ -335,16 +342,11 @@ public class ProcessBTMsg {
 				}
 				payload.put((byte) mRule.getAction());
 				payload.putInt(mRule.getActDevId());
-				payload.putShort(mRule.getActDevVal());
+				payload.putShort((short) mRule.getActDevVal());
 
 				mMsg.setPayload(payload.array());
 				payload.clear();
-				try {
-					putBLEMessage(mContext.mWriteCharacteristic, mMsg);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				putBLEMessage(mContext.mWriteCharacteristic, mMsg);
 			}
 		} else {
 			Rule_c mRule = mRuleList.get(ruleIndex);
@@ -370,17 +372,12 @@ public class ProcessBTMsg {
 			}
 			payload.put((byte) mRule.getAction());
 			payload.putInt(mRule.getActDevId());
-			payload.putShort(mRule.getActDevVal());
+			payload.putShort((short) mRule.getActDevVal());
 
 			mMsg.setPayload(payload.array());
 			payload.clear();
 
-			try {
-				putBLEMessage(mContext.mWriteCharacteristic, mMsg);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			putBLEMessage(mContext.mWriteCharacteristic, mMsg);
 		}
 	}
 

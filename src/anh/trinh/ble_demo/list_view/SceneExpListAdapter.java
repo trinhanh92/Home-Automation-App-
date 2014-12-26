@@ -196,31 +196,29 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 					llDevVal.setVisibility(View.VISIBLE);
 					mTitlle1.setText("Device");
 					mTittle2.setText("Value");
-
-					condDevChoose
-							.setOnItemSelectedListener(new OnItemSelectedListener() {
-
-								@Override
-								public void onItemSelected(AdapterView<?> arg0,
-										View arg1, int pos, long arg3) {
-									// TODO Auto-generated method stub
-									listOfScene
-											.get(scenePos)
-											.getRuleWithIndex(rulePos)
-											.setCondDevId(
-													inDeviceList.get(pos)
-															.getDevID());
-								}
-
-								@Override
-								public void onNothingSelected(
-										AdapterView<?> arg0) {
-
-								}
-							});
-
 				}
 
+				condDevChoose
+						.setOnItemSelectedListener(new OnItemSelectedListener() {
+
+							@Override
+							public void onItemSelected(AdapterView<?> arg0,
+									View arg1, int pos, long arg3) {
+								// TODO Auto-generated method stub
+								listOfScene
+										.get(scenePos)
+										.getRuleWithIndex(rulePos)
+										.setCondDevId(
+												inDeviceList.get(pos)
+														.getDevID());
+							}
+
+							@Override
+							public void onNothingSelected(AdapterView<?> arg0) {
+
+							}
+						});
+				
 				actDevChoose
 						.setOnItemSelectedListener(new OnItemSelectedListener() {
 
@@ -273,16 +271,14 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 		if (mRuleObj != null) {
 			mCondChoose.setSelection(mRuleObj.getCond());
 			mActChoose.setSelection(mRuleObj.getAction());
-
 			actDevChoose.setSelection(findDevIndexByID(outDeviceList,
 					mRuleObj.getActDevId()));
-			actDevVal.setText(Integer.toString(mRuleObj.getActDevVal()));
-
 			condDevChoose.setSelection(findDevIndexByID(inDeviceList,
 					mRuleObj.getCondDevId()));
+			actDevVal.setText(Integer.toString(mRuleObj.getActDevVal()));
 			condDevVal.setText(Integer.toString(mRuleObj.getCondDevVal()));
 
-			if (llTimeRange.getVisibility() == View.VISIBLE) {
+//			if (llTimeRange.getVisibility() == View.VISIBLE) {
 				SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd");
 				SimpleDateFormat stf = new SimpleDateFormat("HH:mm");
 
@@ -335,7 +331,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 						showTimePickerDialog(scenePos, rulePos, (TextView) v);
 					}
 				});
-			}
+//			}
 		}
 
 		mBtnSave.setOnClickListener(new OnClickListener() {
@@ -344,15 +340,16 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 			public void onClick(View arg0) {
 				// TODO Auto-generated method stub
 				if (!condDevVal.getText().toString().matches("")) {
-					((Rule_c) getChild(scenePos, rulePos)).setCondDevVal(Short
-							.valueOf(condDevVal.getText().toString()));
+					((Rule_c) getChild(scenePos, rulePos))
+							.setCondDevVal(Integer.parseInt(condDevVal
+									.getText().toString()));
 				} else {
 					((Rule_c) getChild(scenePos, rulePos))
 							.setCondDevVal((short) 0);
 				}
 				if (!actDevVal.getText().toString().matches("")) {
-					((Rule_c) getChild(scenePos, rulePos)).setActDevVal(Short
-							.valueOf(actDevVal.getText().toString()));
+					((Rule_c) getChild(scenePos, rulePos)).setActDevVal(Integer
+							.parseInt(actDevVal.getText().toString()));
 				} else {
 					((Rule_c) getChild(scenePos, rulePos))
 							.setActDevVal((short) 0);
@@ -503,14 +500,18 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 	 * @return
 	 */
 	private int findDevIndexByID(ArrayList<DeviceInfo> listOfDev, int devID) {
+		if(listOfDev.isEmpty()){
+			Log.i(TAG, "what the fuck!!!" + Integer.toHexString(devID));
+			return -1;
+		}
 		for (int i = 0; i < listOfDev.size(); i++) {
 			if (listOfDev.get(i).getDevID() == devID) {
 				// Log.i(TAG, "found devID:" + Integer.toHexString(devID));
 				return i;
 			}
 		}
-		// Log.i(TAG, "not found devID:" + Integer.toHexString(devID));
-		return -1;
+		Log.i(TAG, "not found devID:" + Integer.toHexString(devID));
+		return 0;
 	}
 
 	/**
@@ -807,15 +808,10 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 		btMsg.setCmdIdH((byte) CommandID.SET);
 		btMsg.setCmdIdL((byte) CommandID.NEW_SCENE);
 		btMsg.setPayload(listOfScene.get(scenePos).getName().getBytes());
-		try {
-			mContext.mProcessMsg.putBLEMessage(mContext.mWriteCharacteristic,
-					btMsg);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		mContext.mProcessMsg
+				.putBLEMessage(mContext.mWriteCharacteristic, btMsg);
 
-		new CountDownTimer(10500, 10500) {
+		new CountDownTimer(11000, 11000) {
 
 			@Override
 			public void onTick(long millisUntilFinished) {
@@ -833,7 +829,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 				}
 
 			}
-		};
+		}.start();
 	}
 
 	/**
@@ -908,13 +904,8 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 					payload.put(sceneName.getBytes());
 					btMsg.setPayload(payload.array());
 					payload.clear();
-					try {
-						mContext.mProcessMsg.putBLEMessage(
-								mContext.mWriteCharacteristic, btMsg);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+					mContext.mProcessMsg.putBLEMessage(
+							mContext.mWriteCharacteristic, btMsg);
 
 				} else {
 					Toast.makeText(mContext.getApplicationContext(),
@@ -964,13 +955,8 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 							btMsg.setCmdIdH((byte) CommandID.SET);
 							btMsg.setCmdIdL((byte) CommandID.REMOVE_SCENE);
 							btMsg.setPayload(curSceneName.getBytes());
-							try {
-								mContext.mProcessMsg.putBLEMessage(
-										mContext.mWriteCharacteristic, btMsg);
-							} catch (InterruptedException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
+							mContext.mProcessMsg.putBLEMessage(
+									mContext.mWriteCharacteristic, btMsg);
 						}
 					});
 

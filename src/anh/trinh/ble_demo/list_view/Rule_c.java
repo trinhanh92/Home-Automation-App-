@@ -7,10 +7,10 @@ public class Rule_c {
 	private int mAction;
 	
 	private int mCondDevID;
-	private short mCondDevVal;
+	private int mCondDevVal;
 	
 	private int mActDevID;
-	private short mActDevVal;
+	private int mActDevVal;
 	
 	private int startDateTime;
 	private int startDate;
@@ -64,19 +64,19 @@ public class Rule_c {
 		return this.mActDevID;
 	}
 	
-	public void setCondDevVal(short mDevVal){
-		this.mCondDevVal = mDevVal;
+	public void setCondDevVal(int i){
+		this.mCondDevVal = i;
 	}
 	
-	public short getCondDevVal(){
+	public int getCondDevVal(){
 		return this.mCondDevVal;
 	}
 	
-	public void setActDevVal(short mDevVal){
+	public void setActDevVal(int mDevVal){
 		this.mActDevVal = mDevVal;
 	}
 	
-	public short getActDevVal(){
+	public int getActDevVal(){
 		return this.mActDevVal;
 	}
 	
