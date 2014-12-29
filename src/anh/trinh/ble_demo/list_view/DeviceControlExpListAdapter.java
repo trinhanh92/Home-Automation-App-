@@ -1,13 +1,18 @@
 package anh.trinh.ble_demo.list_view;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Formatter;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.opengl.Visibility;
 import android.os.Message;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,6 +23,7 @@ import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
@@ -44,7 +50,7 @@ public class DeviceControlExpListAdapter extends BaseExpandableListAdapter {
 
 	private static final String TAG = "ExpandableListView";
 	private HomeActivity mContext;
-	private ArrayList<Zone_c> listParent;
+	private ArrayList<Zone_c> listOfRoom;
 
 	private class DeviceHolder {
 		public int mHolderType;
@@ -66,18 +72,18 @@ public class DeviceControlExpListAdapter extends BaseExpandableListAdapter {
 	public DeviceControlExpListAdapter(HomeActivity mContext,
 			ArrayList<Zone_c> listParent) {
 		this.mContext = mContext;
-		this.listParent = listParent;
+		this.listOfRoom = listParent;
 	}
 
 	/**
 	 * Update list data
 	 */
 	public void updateData(ArrayList<Zone_c> listParent) {
-		this.listParent = listParent;
+		this.listOfRoom = listParent;
 	}
 
 	@Override
-	public View getGroupView(int groupPos, boolean isExpanded,
+	public View getGroupView(final int groupPos, boolean isExpanded,
 			View convertView, ViewGroup parent) {
 		// TODO Auto-generated method stub
 		final Zone_c parentObj = (Zone_c) getGroup(groupPos);
@@ -88,12 +94,101 @@ public class DeviceControlExpListAdapter extends BaseExpandableListAdapter {
 			convertView = inf.inflate(R.layout.group_list, null);
 
 		}
-		TextView mZoneName = (TextView) convertView.findViewById(R.id.roomName);
+		final TextView mZoneName = (TextView) convertView.findViewById(R.id.roomName);
 		TextView mNumDev = (TextView) convertView.findViewById(R.id.numOfDev);
+		ImageButton btnRename = (ImageButton) convertView
+				.findViewById(R.id.btnRename);
+
+		btnRename.setFocusable(false);
 		mZoneName.setText(parentObj.getName());
 		mNumDev.setText("(" + Integer.toString(parentObj.getChildCount())
 				+ " devs)");
 
+		// button rename click listener
+		btnRename.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				AlertDialog.Builder mBuilder = new AlertDialog.Builder(mContext);
+				mBuilder.setTitle("Rename zone");
+				mBuilder.setMessage("Please enter zone name");
+				final EditText input = new EditText(mContext);
+				input.setHint("name not over 16 char");
+				input.addTextChangedListener(new TextWatcher() {
+
+					@Override
+					public void onTextChanged(CharSequence arg0, int arg1,
+							int arg2, int arg3) {
+						// TODO Auto-generated method stub
+
+					}
+
+					@Override
+					public void beforeTextChanged(CharSequence arg0, int arg1,
+							int arg2, int arg3) {
+						// TODO Auto-generated method stub
+
+					}
+
+					@Override
+					public void afterTextChanged(Editable s) {
+						if (s.toString().getBytes().length > 16) {
+							input.setText("");
+							input.setHint("name not over 16 chars");
+						}
+
+					}
+				});
+
+				mBuilder.setView(input);
+
+				mBuilder.setPositiveButton("OK",
+						new DialogInterface.OnClickListener() {
+
+							@Override
+							public void onClick(DialogInterface dialog,
+									int which) {
+								String zoneName = input.getText().toString();
+								if (zoneName.getBytes().length < 16) {
+									for (int i = 0; i < 16 - zoneName
+											.getBytes().length; i++) {
+										zoneName += "\0";
+									}
+								}
+								
+								parentObj.setName(zoneName);
+								mZoneName.setText(zoneName);
+								listOfRoom.get(groupPos).setName(zoneName);
+								BluetoothMessage btMsg = new BluetoothMessage();
+								btMsg.setType(BTMessageType.BLE_DATA);
+								btMsg.setIndex(mContext.mBTMsgIndex);
+								btMsg.setLength((byte) 17);
+								btMsg.setCmdIdH((byte) CommandID.SET);
+								btMsg.setCmdIdL((byte) CommandID.ZONE_NAME);
+								ByteBuffer payload = ByteBuffer.allocate(17);
+								payload.put((byte) parentObj.getID());
+								payload.put(zoneName.getBytes());
+								btMsg.setPayload(payload.array());
+								payload.clear();
+								mContext.mProcessMsg.putBLEMessage(
+										mContext.mWriteCharacteristic, btMsg);
+
+							}
+						});
+				mBuilder.setNegativeButton("Cancel",
+						new DialogInterface.OnClickListener() {
+
+							@Override
+							public void onClick(DialogInterface dialog,
+									int which) {
+								dialog.dismiss();
+							}
+						});
+
+				mBuilder.show();
+
+			}
+		});
 		return convertView;
 	}
 
@@ -707,37 +802,37 @@ public class DeviceControlExpListAdapter extends BaseExpandableListAdapter {
 	@Override
 	public Object getChild(int groupPos, int childPos) {
 		// TODO Auto-generated method stub
-		return listParent.get(groupPos).getChildList().get(childPos);
+		return listOfRoom.get(groupPos).getChildList().get(childPos);
 	}
 
 	@Override
 	public long getChildId(int groupPos, int childPos) {
 		// TODO Auto-generated method stub
-		return listParent.get(groupPos).getChildIndex(childPos).getID();
+		return listOfRoom.get(groupPos).getChildIndex(childPos).getID();
 	}
 
 	@Override
 	public int getChildrenCount(int groupPos) {
 		// TODO Auto-generated method stub
-		return listParent.get(groupPos).getChildCount();
+		return listOfRoom.get(groupPos).getChildCount();
 	}
 
 	@Override
 	public Object getGroup(int groupPos) {
 		// TODO Auto-generated method stub
-		return listParent.get(groupPos);
+		return listOfRoom.get(groupPos);
 	}
 
 	@Override
 	public int getGroupCount() {
 		// TODO Auto-generated method stub
-		return listParent.size();
+		return listOfRoom.size();
 	}
 
 	@Override
 	public long getGroupId(int groupPos) {
 		// TODO Auto-generated method stub
-		return listParent.get(groupPos).getID();
+		return listOfRoom.get(groupPos).getID();
 	}
 
 	@Override

@@ -218,7 +218,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 
 							}
 						});
-				
+
 				actDevChoose
 						.setOnItemSelectedListener(new OnItemSelectedListener() {
 
@@ -278,67 +278,67 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 			actDevVal.setText(Integer.toString(mRuleObj.getActDevVal()));
 			condDevVal.setText(Integer.toString(mRuleObj.getCondDevVal()));
 
-//			if (llTimeRange.getVisibility() == View.VISIBLE) {
-				SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd");
-				SimpleDateFormat stf = new SimpleDateFormat("HH:mm");
+			// if (llTimeRange.getVisibility() == View.VISIBLE) {
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd");
+			SimpleDateFormat stf = new SimpleDateFormat("HH:mm");
 
-				if (mRuleObj.getCond() == ConditionDef.IN_RANGE_EVDAY) {
-					mFromDate.setText("--");
-					mToDate.setText("--");
-				} else {
-					mFromDate.setText(sdf.format(new Date(
-							dosToJavaTime(mRuleObj.getStartDate()))));
-					mToDate.setText(sdf.format(new Date(dosToJavaTime(mRuleObj
-							.getEndDate()))));
+			if (mRuleObj.getCond() == ConditionDef.IN_RANGE_EVDAY) {
+				mFromDate.setText("--");
+				mToDate.setText("--");
+			} else {
+				mFromDate.setText(sdf.format(new Date(dosToJavaTime(mRuleObj
+						.getStartDate()))));
+				mToDate.setText(sdf.format(new Date(dosToJavaTime(mRuleObj
+						.getEndDate()))));
+			}
+			mFromTime.setText(stf.format(new Time(dosToJavaTime(mRuleObj
+					.getStartTime()))));
+			mToTime.setText(stf.format(new Time(dosToJavaTime(mRuleObj
+					.getEndTime()))));
+
+			mFromDate.setOnClickListener(new OnClickListener() {
+
+				@Override
+				public void onClick(View v) {
+					// TODO Auto-generated method stub
+					showDatePickerDialog(scenePos, rulePos, (TextView) v);
 				}
-				mFromTime.setText(stf.format(new Time(dosToJavaTime(mRuleObj
-						.getStartTime()))));
-				mToTime.setText(stf.format(new Time(dosToJavaTime(mRuleObj
-						.getEndTime()))));
+			});
 
-				mFromDate.setOnClickListener(new OnClickListener() {
+			mFromTime.setOnClickListener(new OnClickListener() {
 
-					@Override
-					public void onClick(View v) {
-						// TODO Auto-generated method stub
-						showDatePickerDialog(scenePos, rulePos, (TextView) v);
-					}
-				});
+				@Override
+				public void onClick(View v) {
+					// TODO Auto-generated method stub
+					showTimePickerDialog(scenePos, rulePos, (TextView) v);
+				}
+			});
 
-				mFromTime.setOnClickListener(new OnClickListener() {
+			mToDate.setOnClickListener(new OnClickListener() {
 
-					@Override
-					public void onClick(View v) {
-						// TODO Auto-generated method stub
-						showTimePickerDialog(scenePos, rulePos, (TextView) v);
-					}
-				});
+				@Override
+				public void onClick(View v) {
+					// TODO Auto-generated method stub
+					showDatePickerDialog(scenePos, rulePos, (TextView) v);
+				}
+			});
 
-				mToDate.setOnClickListener(new OnClickListener() {
+			mToTime.setOnClickListener(new OnClickListener() {
 
-					@Override
-					public void onClick(View v) {
-						// TODO Auto-generated method stub
-						showDatePickerDialog(scenePos, rulePos, (TextView) v);
-					}
-				});
-
-				mToTime.setOnClickListener(new OnClickListener() {
-
-					@Override
-					public void onClick(View v) {
-						// TODO Auto-generated method stub
-						showTimePickerDialog(scenePos, rulePos, (TextView) v);
-					}
-				});
-//			}
+				@Override
+				public void onClick(View v) {
+					// TODO Auto-generated method stub
+					showTimePickerDialog(scenePos, rulePos, (TextView) v);
+				}
+			});
+			// }
 		}
 
 		mBtnSave.setOnClickListener(new OnClickListener() {
 
 			@Override
 			public void onClick(View arg0) {
-				// TODO Auto-generated method stub
+
 				if (!condDevVal.getText().toString().matches("")) {
 					((Rule_c) getChild(scenePos, rulePos))
 							.setCondDevVal(Integer.parseInt(condDevVal
@@ -434,7 +434,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 	public View getGroupView(int groupPos, boolean isExpanded,
 			View convertView, ViewGroup parent) {
 		// TODO Auto-generated method stub
-		Scene_c sceneObj = (Scene_c) getGroup(groupPos);
+		final Scene_c sceneObj = (Scene_c) getGroup(groupPos);
 		// Log.i(TAG, "groupView");
 		final int scenePos = groupPos;
 		if (convertView == null) {
@@ -456,9 +456,22 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 		isActive.setOnCheckedChangeListener(new OnCheckedChangeListener() {
 
 			@Override
-			public void onCheckedChanged(CompoundButton arg0, boolean isChecked) {
-				// TODO Auto-generated method stub
+			public void onCheckedChanged(CompoundButton v, boolean isChecked) {
 				((Scene_c) getGroup(scenePos)).setActived(isChecked);
+				BluetoothMessage btMsg = new BluetoothMessage();
+				btMsg.setType(BTMessageType.BLE_DATA);
+				btMsg.setIndex(mContext.mBTMsgIndex);
+				btMsg.setLength((byte) 9);
+				btMsg.setCmdIdH((byte) CommandID.SET);
+				btMsg.setCmdIdL((byte) CommandID.ACT_SCENE_WITH_INDEX);
+				ByteBuffer payload = ByteBuffer.allocate(9);
+				payload.put((byte) sceneObj.getID());
+				payload.put(sceneObj.getName().getBytes());
+				btMsg.setPayload(payload.array());
+				payload.clear();
+				mContext.mProcessMsg.putBLEMessage(
+						mContext.mWriteCharacteristic, btMsg);
+				//set last active scene back to inactive 
 				if (listOfScene.get(scenePos).getActived()) {
 					for (int i = 0; i < listOfScene.size(); i++) {
 						if (listOfScene.get(i).getActived() && (i != scenePos)) {
@@ -500,10 +513,6 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 	 * @return
 	 */
 	private int findDevIndexByID(ArrayList<DeviceInfo> listOfDev, int devID) {
-		if(listOfDev.isEmpty()){
-			Log.i(TAG, "what the fuck!!!" + Integer.toHexString(devID));
-			return -1;
-		}
 		for (int i = 0; i < listOfDev.size(); i++) {
 			if (listOfDev.get(i).getDevID() == devID) {
 				// Log.i(TAG, "found devID:" + Integer.toHexString(devID));
@@ -660,9 +669,6 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 											.setStartTime(javaToDosTime(stf
 													.parse(getTimeString)
 													.getTime()));
-									// Log.i(TAG, "time time");
-									// System.out.println(stf.parse(v.getText()
-									// .toString()));
 								} catch (ParseException e) {
 									// TODO Auto-generated catch block
 									e.printStackTrace();
@@ -751,7 +757,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 	private long dosToJavaTime(int dosTime) {
 		Calendar cal = Calendar.getInstance();
 		cal.set(Calendar.YEAR, ((dosTime >> 25) & 0x7f) + 1980);
-		cal.set(Calendar.MONTH, ((dosTime >> 21) & 0x0f));
+		cal.set(Calendar.MONTH, ((dosTime >> 21) & 0x0f) - 1);
 		cal.set(Calendar.DATE, ((dosTime >> 16) & 0x1f));
 		cal.set(Calendar.HOUR_OF_DAY, (dosTime >> 11) & 0x1f);
 		cal.set(Calendar.MINUTE, (dosTime >> 5) & 0x3f);
@@ -770,11 +776,9 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 	private int javaToDosTime(long jTime) {
 		Date d = new Date(jTime);
 		int year = d.getYear() + 1900;
-		// if (year < 1980) {
-		// return (1 << 21) | (1 << 16);
-		// }
-		return (year - 1980) << 25 | (d.getMonth()) << 21 | (d.getDate()) << 16
-				| d.getHours() << 11 | d.getMinutes() << 5 | d.getSeconds();
+		return (year - 1980) << 25 | (d.getMonth() + 1) << 21
+				| (d.getDate()) << 16 | d.getHours() << 11
+				| d.getMinutes() << 5 | d.getSeconds() >> 1;
 	}
 
 	/**
@@ -826,6 +830,9 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 					Toast.makeText(mContext.getApplicationContext(),
 							"save scene not success", Toast.LENGTH_SHORT)
 							.show();
+//					listOfScene.clear();
+//					listOfScene.addAll(mContext.mSceneList);
+//					notifyDataSetChanged();
 				}
 
 			}
@@ -888,19 +895,23 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 				if (!sceneName.matches(curSceneName) && !sceneName.isEmpty()) {
 					if (sceneName.length() < 8) {
 						for (int i = 0; i < (8 - sceneName.length()); i++) {
-							sceneName.concat("\0");
+							sceneName += "\0";
 						}
 					}
 					listOfScene.get(pos).setName(sceneName);
 					mContext.mSceneList.get(pos).setName(sceneName);
 					notifyDataSetChanged();
+
 					BluetoothMessage btMsg = new BluetoothMessage();
 					btMsg.setType(BTMessageType.BLE_DATA);
 					btMsg.setIndex(mContext.mBTMsgIndex);
+					btMsg.setLength((byte) 16);
 					btMsg.setCmdIdH((byte) CommandID.SET);
 					btMsg.setCmdIdL((byte) CommandID.RENAME_SCENE);
 					ByteBuffer payload = ByteBuffer.allocate(16);
 					payload.put(curSceneName.getBytes());
+					Log.i(TAG, "cursceneName:" + curSceneName);
+					Log.i(TAG, "sceneName" + sceneName);
 					payload.put(sceneName.getBytes());
 					btMsg.setPayload(payload.array());
 					payload.clear();
@@ -952,6 +963,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 							BluetoothMessage btMsg = new BluetoothMessage();
 							btMsg.setType(BTMessageType.BLE_DATA);
 							btMsg.setIndex(mContext.mBTMsgIndex);
+							btMsg.setLength((byte) 8);
 							btMsg.setCmdIdH((byte) CommandID.SET);
 							btMsg.setCmdIdL((byte) CommandID.REMOVE_SCENE);
 							btMsg.setPayload(curSceneName.getBytes());
@@ -1039,5 +1051,9 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 			}
 		}
 
+	}
+
+	public ArrayList<Scene_c> getListOfScene() {
+		return this.listOfScene;
 	}
 }

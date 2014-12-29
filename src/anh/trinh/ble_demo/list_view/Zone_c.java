@@ -28,6 +28,10 @@ public class Zone_c {
 		this.parentId = zoneID;
 	}
 	
+	public void setName(String zoneName){
+		this.name = zoneName;
+	}
+	
 	public int getID(){
 		return this.parentId;
 	}

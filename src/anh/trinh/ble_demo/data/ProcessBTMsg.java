@@ -40,6 +40,8 @@ import android.widget.Toast;
 import anh.trinh.ble_demo.BluetoothLeService;
 import anh.trinh.ble_demo.DeviceControlFragment;
 import anh.trinh.ble_demo.HomeActivity;
+import anh.trinh.ble_demo.ScenesFragment;
+import anh.trinh.ble_demo.list_view.Device_c;
 import anh.trinh.ble_demo.list_view.Rule_c;
 import anh.trinh.ble_demo.list_view.Scene_c;
 
@@ -79,7 +81,7 @@ public class ProcessBTMsg {
 	 * @return
 	 */
 	public void putBLEMessage(BluetoothGattCharacteristic characteristic,
-			BluetoothMessage msg){
+			BluetoothMessage msg) {
 		int timeout;
 		ByteBuffer sendBuf = ByteBuffer.allocate(msg.getLength() + 6);
 		sendBuf.put(msg.getType());
@@ -98,16 +100,16 @@ public class ProcessBTMsg {
 		characteristic.setValue(sendBuf.array());
 
 		System.out.println("data send to BLE");
-//		for (int i = 0; i < msg.getLength() + 6; i++) {
-//			System.out.printf("%d ", sendBuf.array()[i]);
-//		}
-//		System.out.println();
+		for (int i = 0; i < msg.getLength() + 6; i++) {
+			System.out.printf("%d ", sendBuf.array()[i]);
+		}
+		System.out.println();
 		sendBuf.clear();
 
 		mContext.mBTMsgIndex++;
 		synchronized (mContext.mWriteSuccess) {
 			if (!mContext.mWrited) {
-//				mContext.mWriteSuccess.wait(timeout);
+				// mContext.mWriteSuccess.wait(timeout);
 				try {
 					mContext.mWriteSuccess.wait(timeout);
 				} catch (InterruptedException e) {
@@ -135,7 +137,7 @@ public class ProcessBTMsg {
 		sendBuf.put((byte) 0);
 		characteristic.setValue(sendBuf.array());
 		sendBuf.clear();
-		
+
 		synchronized (mContext.mWriteSuccess) {
 			if (!mContext.mWrited) {
 				try {
@@ -159,7 +161,8 @@ public class ProcessBTMsg {
 	public BluetoothMessage parseBTMessage(byte[] msgBuf) {
 		BluetoothMessage BTMsg;
 		byte msgType = msgBuf[0];
-		final short msgIndex = DataConversion.byteArr2Short(msgBuf[1], msgBuf[2]);
+		final short msgIndex = DataConversion.byteArr2Short(msgBuf[1],
+				msgBuf[2]);
 		if (msgType == BTMessageType.BLE_ACK) {
 			byte msgLen = msgBuf[3];
 			BTMsg = new BluetoothMessage();
@@ -191,6 +194,10 @@ public class ProcessBTMsg {
 	 */
 	public void processBTMessage(BluetoothMessage btMsg) {
 		Message handlerMsg;
+		String sceneName;
+		ScenesFragment mSceneFrag = (ScenesFragment) mContext
+				.getSupportFragmentManager().getFragments().get(1);
+
 		int len = btMsg.getLength();
 		if (btMsg.getType() == BTMessageType.BLE_ACK) {
 			return;
@@ -218,6 +225,9 @@ public class ProcessBTMsg {
 			// update device value from CC
 			updateDeviceValue(btMsg.getPayload());
 			break;
+		case CommandID.ZONE_NAME:
+			getZoneName(btMsg.getPayload());
+			break;
 		case CommandID.NUM_OF_SCENES:
 			Log.i(TAG, "num of scene");
 			mContext.mNumOfActScene = btMsg.getPayload()[0];
@@ -239,8 +249,8 @@ public class ProcessBTMsg {
 			Log.i(TAG, "num of rule");
 			if (btMsg.getCmdIdH() == CommandID.SET) {
 			} else {
-				String sceneName = new String(DataConversion.getBytesFromArray(
-						0, 8, btMsg.getPayload()));
+				sceneName = new String(DataConversion.getBytesFromArray(0, 8,
+						btMsg.getPayload()));
 				sendNumOfRule(sceneName);
 			}
 
@@ -250,36 +260,67 @@ public class ProcessBTMsg {
 			if (btMsg.getCmdIdH() == CommandID.SET) {
 				getRuleList(dataBuf);
 			} else {
-				String sceneName = new String(DataConversion.getBytesFromArray(
-						0, 8, btMsg.getPayload()));
+				sceneName = new String(DataConversion.getBytesFromArray(0, 8,
+						btMsg.getPayload()));
 				short ruleIndex = dataBuf.getShort(8);
-				sendRuleList(sceneName, ruleIndex);
+				sendRuleListToCC(sceneName, ruleIndex);
 			}
 			break;
 		case CommandID.RENAME_SCENE:
 			Log.i(TAG, "rename scene");
+			sceneName = new String(DataConversion.getBytesFromArray(0, 8,
+					btMsg.getPayload()));
+			Toast.makeText(mContext, "rename scene successfully",
+					Toast.LENGTH_SHORT).show();
+
+			mContext.mSceneList.clear();
+			mContext.mSceneList.addAll(mSceneFrag.getListOfScene());
+			// mSceneFrag.updateSceneUI(mContext.mSceneList);
 			break;
 		case CommandID.REMOVE_SCENE:
 			Log.i(TAG, "remove scene");
+			sceneName = new String(DataConversion.getBytesFromArray(0, 8,
+					btMsg.getPayload()));
+			Toast.makeText(mContext, "remove scene successfully!",
+					Toast.LENGTH_SHORT).show();
+
+			mContext.mSceneList.clear();
+			mContext.mSceneList.addAll(mSceneFrag.getListOfScene());
+			// mSceneFrag.updateSceneUI(mContext.mSceneList);
 			break;
 		case CommandID.NEW_SCENE:
 			Log.i(TAG, "New scene");
 			mContext.mProgDialog.dismiss();
-			String sceneName = new String(DataConversion.getBytesFromArray(0,
-					8, btMsg.getPayload()));
-			if (sceneName.matches(mContext.mSceneList.get(
-					mContext.mSceneList.size() - 1).getName())) {
-				Toast.makeText(mContext, "Add new scene successfully!",
-						Toast.LENGTH_SHORT).show();
-			} else {
-				Toast.makeText(mContext, "Can not add new scene!",
-						Toast.LENGTH_SHORT).show();
-				mContext.mSceneList
-						.remove(mContext.mSceneList.size() - 1);
-			}
+
+			sceneName = new String(DataConversion.getBytesFromArray(0, 8,
+					btMsg.getPayload()));
+			Toast.makeText(mContext, "Add new scene successfully!",
+					Toast.LENGTH_SHORT).show();
+
+			mContext.mSceneList.clear();
+			mContext.mSceneList.addAll(mSceneFrag.getListOfScene());
+			// mSceneFrag.updateSceneUI(mContext.mSceneList);
 		}
 		// Clear buffer
 		dataBuf.clear();
+
+	}
+
+	/**
+	 * Get zone name from CC
+	 * 
+	 * @param payload
+	 */
+	private void getZoneName(byte[] payload) {
+		int zoneID = payload[0];
+		String zoneName = new String(DataConversion.getBytesFromArray(1, 16,
+				payload));
+		for (int i = 0; i < mContext.mZoneList.size(); i++) {
+			if (mContext.mZoneList.get(i).getID() == zoneID) {
+				mContext.mZoneList.get(i).setName(zoneName);
+				break;
+			}
+		}
 
 	}
 
@@ -307,7 +348,7 @@ public class ProcessBTMsg {
 		putBLEMessage(mContext.mWriteCharacteristic, mMsg);
 	}
 
-	private void sendRuleList(String sceneName, short ruleIndex) {
+	private void sendRuleListToCC(String sceneName, short ruleIndex) {
 		Scene_c scene = getSceneWithName(sceneName);
 		if (scene == null) {
 			Log.i(TAG, "scene not exist");
@@ -318,7 +359,7 @@ public class ProcessBTMsg {
 		// scene all rule if index = 0xffff
 		if (ruleIndex == -1) {
 			for (int i = 0; i < scene.getNumOfRule(); i++) {
-//				Log.i(TAG, "send rule with index " + i);
+				// Log.i(TAG, "send rule with index " + i);
 				Rule_c mRule = mRuleList.get(i);
 				BluetoothMessage mMsg = new BluetoothMessage();
 				mMsg.setType(BTMessageType.BLE_DATA);
@@ -435,7 +476,7 @@ public class ProcessBTMsg {
 			Scene_c newSceneObj = new Scene_c();
 			newSceneObj.setIndex(sceneIndex);
 			newSceneObj.setName(sceneName);
-//			Log.i(TAG, sceneName);
+			// Log.i(TAG, sceneName);
 			newSceneObj.setActived(isActived);
 			mContext.mSceneList.add(newSceneObj);
 		}
@@ -459,7 +500,7 @@ public class ProcessBTMsg {
 			newDev.setDevIdx(devIndex);
 			newDev.setDevID(devID);
 			newDev.setDevVal(devVal);
-			if(!isDeviceExist(mContext.mDevInfoList, devID)){
+			if (!isDeviceExist(mContext.mDevInfoList, devID)) {
 				mContext.mDevInfoList.add(newDev);
 			}
 
@@ -485,9 +526,14 @@ public class ProcessBTMsg {
 	}
 
 	private Scene_c getSceneWithName(String sceneName) {
-		for (int i = 0; i < mContext.mSceneList.size(); i++) {
-			if (mContext.mSceneList.get(i).getName().matches(sceneName)) {
-				return mContext.mSceneList.get(i);
+		ScenesFragment mSceneFrag = (ScenesFragment) mContext
+				.getSupportFragmentManager().getFragments().get(1);
+		ArrayList<Scene_c> listOfScene = new ArrayList<Scene_c>();
+		listOfScene.addAll(mSceneFrag.getListOfScene());
+		for (int i = 0; i < listOfScene.size(); i++) {
+			Log.i(TAG, "scene get: " + i);
+			if (listOfScene.get(i).getName().matches(sceneName)) {
+				return listOfScene.get(i);
 			}
 		}
 		return null;
@@ -504,8 +550,8 @@ public class ProcessBTMsg {
 		// get device value version 2
 		ByteBuffer dataBuf = ByteBuffer.allocate(payLoad.length);
 		dataBuf.put(payLoad);
-		int mDevID = dataBuf.getInt(0);
-		short mDevVal = dataBuf.getShort(4);
+		final int mDevID = dataBuf.getInt(0);
+		final short mDevVal = dataBuf.getShort(4);
 		dataBuf.clear();
 
 		for (int i = 0; i < mContext.mDevInfoList.size(); i++) {
@@ -527,8 +573,61 @@ public class ProcessBTMsg {
 				// TODO Auto-generated method stub
 				DeviceControlFragment mDeviceFrag = (DeviceControlFragment) mContext
 						.getSupportFragmentManager().getFragments().get(0);
-				mDeviceFrag.updateUI(mContext.mDevInfoList);
+				// mDeviceFrag.updateUI(mContext.mDevInfoList);
+				updateDevValInZone(mDevID, mDevVal);
+				mDeviceFrag.updateUI(mContext.mZoneList);
 			}
 		});
+	}
+
+	/**
+	 * update device value in zone list
+	 * 
+	 * @param devID
+	 * @param devVal
+	 */
+	private void updateDevValInZone(int devID, short devVal) {
+		for (int i = 0; i < mContext.mZoneList.size(); i++) {
+			for (int j = 0; j < mContext.mZoneList.get(i).getChildCount(); j++) {
+				if (mContext.mZoneList.get(i).getChildIndex(j).getID() == devID) {
+					mContext.mZoneList.get(i).getChildIndex(j).setVal(devVal);
+					return;
+				}
+			}
+		}
+		if (!isDeviceExistInZone((byte) devID >> 24, devID)) {
+			for (int i = 0; i < mContext.mZoneList.size(); i++) {
+				if (mContext.mZoneList.get(i).getID() == (devID >> 24)) {
+					Device_c mNewDev = new Device_c();
+					mNewDev.setID(devID);
+					mNewDev.setName(devID);
+					mNewDev.setVal(devVal);
+					mContext.mZoneList.get(i).addChildListItem(mNewDev);
+					break;
+				}
+			}
+		}
+
+	}
+
+	/**
+	 * Determine if device exist in zone or not 
+	 * 
+	 * @param zoneID
+	 * @param devID
+	 * @return
+	 */
+	private boolean isDeviceExistInZone(int zoneID, int devID) {
+		for (int i = 0; i < mContext.mZoneList.size(); i++) {
+			if (mContext.mZoneList.get(i).getID() == zoneID) {
+				for (int j = 0; j < mContext.mZoneList.get(i).getChildCount(); j++) {
+					if (mContext.mZoneList.get(i).getChildIndex(j).getID() == devID) {
+						return true;
+					}
+				}
+				break;
+			}
+		}
+		return false;
 	}
 }

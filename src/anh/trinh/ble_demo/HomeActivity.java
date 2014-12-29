@@ -41,8 +41,10 @@ import anh.trinh.ble_demo.data.DataConversion;
 import anh.trinh.ble_demo.data.DeviceInfo;
 import anh.trinh.ble_demo.data.CommandID;
 import anh.trinh.ble_demo.data.ProcessBTMsg;
+import anh.trinh.ble_demo.list_view.Device_c;
 import anh.trinh.ble_demo.list_view.Rule_c;
 import anh.trinh.ble_demo.list_view.Scene_c;
+import anh.trinh.ble_demo.list_view.Zone_c;
 import anh.trinh.ble_demo.thread_sync.ACKisReceived;
 import anh.trinh.ble_demo.thread_sync.BLEWriteThread;
 import anh.trinh.ble_demo.thread_sync.MonitorObject;
@@ -76,6 +78,7 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 	public short mBTMsgIndex = 0;
 	public int mNumOfDev;
 	public ArrayList<DeviceInfo> mDevInfoList = new ArrayList<DeviceInfo>();
+	public ArrayList<Zone_c> mZoneList = new ArrayList<Zone_c>();
 	public int mNumOfActScene;
 	public int mNumOfInactScene;
 	public ArrayList<Scene_c> mSceneList = new ArrayList<Scene_c>();
@@ -407,11 +410,9 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 		// Step1: Request number of device
 		requestNumOfDev(200);
 		// Step2: After timeout request device with index if missed
-//		requestDevIndexAgain(1000);
-		
-		requestDevIndexAgain(startTime + 7500);
-		// TODO: Step3: Request Zone name;
-
+		requestDevIndexAgain(startTime + 6000);
+		// Step3: Request Zone name;
+		requestZoneName(startTime + 6500);
 		// Step4: Display Device List
 		showDeviceListUI(startTime + 8500);
 		// Step5: Request number of scene
@@ -420,9 +421,9 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 		// Step6: Request Rule with index
 		requestRuleIndex(startTime + 10000);
 		// TODO: Step7: Request Rule with index again if missed
-		// requestRuleIndexAgain(startTime + 2000);
+//		requestRuleIndexAgain(startTime + 13000);
 		// Step9: Request inactscene list
-		 requestInactiveScene(startTime + 14000);
+		requestInactiveScene(startTime + 14000);
 		// Step10: Display Scene List
 		showSceneListUI(startTime + 16000);
 
@@ -479,23 +480,13 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 	 **********************************************************************************************/
 
 	// search device index in list
-	private boolean isNonExistDevIndex(ArrayList<DeviceInfo> mDevList, int index) {
+	private boolean isExistDevIndex(ArrayList<DeviceInfo> mDevList, int index) {
 		for (int i = 0; i < mDevList.size(); i++) {
-			if (mDevList.get(i).getDevIdx() != index) {
+			if (mDevList.get(i).getDevIdx() == index) {
 				return true;
 			}
 		}
 		Log.i(TAG, "there was full list of devices");
-		return false;
-	}
-
-	// search rule index in list
-	private boolean isNonExistRuleIndex(ArrayList<Rule_c> mRuleList, int index) {
-		for (int i = 0; i < mRuleList.size(); i++) {
-			if (mRuleList.get(i).getRuleIndex() != index) {
-				return true;
-			}
-		}
 		return false;
 	}
 
@@ -539,6 +530,34 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 		}.start();
 	}
 
+	private void requestZoneName(int timeout) {
+		// request zoneName
+		new CountDownTimer(timeout, timeout) {
+
+			@Override
+			public void onTick(long millisUntilFinished) {
+
+			}
+
+			@Override
+			public void onFinish() {
+				mZoneList = getListOfZone(mDevInfoList);
+				BluetoothMessage btMsg = new BluetoothMessage();
+				for (int i = 0; i < mZoneList.size(); i++) {
+					btMsg.setType(BTMessageType.BLE_DATA);
+					btMsg.setIndex(mBTMsgIndex);
+					btMsg.setLength((byte) 1);
+					btMsg.setCmdIdH((byte) CommandID.GET);
+					btMsg.setCmdIdL((byte) CommandID.ZONE_NAME);
+					btMsg.setPayload(new byte[] { (byte) mZoneList.get(i)
+							.getID() });
+					mProcessMsg.putBLEMessage(mWriteCharacteristic, btMsg);
+				}
+
+			}
+		}.start();
+	}
+
 	private void showDeviceListUI(int timeout) {
 		// display device list after 3s
 		new CountDownTimer(timeout, timeout) {
@@ -556,7 +575,8 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 					// TODO Auto-generated method stub
 					DeviceControlFragment mDeviceFrag = (DeviceControlFragment) getSupportFragmentManager()
 							.getFragments().get(0);
-					mDeviceFrag.updateUI(mDevInfoList);
+					// mZoneList = getListOfZone(mDevInfoList);
+					mDeviceFrag.updateUI(mZoneList);
 				}
 			}
 		}.start();
@@ -567,17 +587,15 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 
 			@Override
 			public void onTick(long millisUntilFinished) {
-				// TODO Auto-generated method stub
 
 			}
 
 			@Override
 			public void onFinish() {
-				// TODO Auto-generated method stub
 				Log.i(TAG, "Request device index again");
 				if (mDevInfoList.size() < mNumOfDev) {
 					for (int i = 0; i < mNumOfDev; i++) {
-						if (isNonExistDevIndex(mDevInfoList, i)) {
+						if (!isExistDevIndex(mDevInfoList, i)) {
 							BluetoothMessage btMsg = new BluetoothMessage();
 							btMsg.setType(BTMessageType.BLE_DATA);
 							btMsg.setIndex(mBTMsgIndex);
@@ -660,22 +678,23 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 				// TODO Auto-generated method stub
 				for (int i = 0; i < mSceneList.size(); i++) {
 					// send request to get list rules of scene;
-					BluetoothMessage msg = new BluetoothMessage();
-					msg.setType(BTMessageType.BLE_DATA);
-					msg.setIndex(mBTMsgIndex);
-					msg.setLength((byte) 10);
-					msg.setCmdIdH((byte) CommandID.GET);
-					msg.setCmdIdL((byte) CommandID.RULE_WITH_INDEX);
-
-					ByteBuffer payloadBuf = ByteBuffer.allocate(10);
-					payloadBuf.put(mSceneList.get(i).getName().getBytes());
-					payloadBuf.put((byte) 0xFF);
-					payloadBuf.put((byte) 0xFF);
-					msg.setPayload(payloadBuf.array());
-					payloadBuf.clear();
-					mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
+					if(mSceneList.get(i).getActived()){
+						BluetoothMessage msg = new BluetoothMessage();
+						msg.setType(BTMessageType.BLE_DATA);
+						msg.setIndex(mBTMsgIndex);
+						msg.setLength((byte) 10);
+						msg.setCmdIdH((byte) CommandID.GET);
+						msg.setCmdIdL((byte) CommandID.RULE_WITH_INDEX);
+	
+						ByteBuffer payloadBuf = ByteBuffer.allocate(10);
+						payloadBuf.put(mSceneList.get(i).getName().getBytes());
+						payloadBuf.put((byte) 0xFF);
+						payloadBuf.put((byte) 0xFF);
+						msg.setPayload(payloadBuf.array());
+						payloadBuf.clear();
+						mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
+					}
 				}
-				backupSceneList(HomeActivity.this);
 			}
 		}.start();
 	}
@@ -700,7 +719,7 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 				// TODO Auto-generated method stub
 				if (mSceneList.get(0).getNumOfRule() < mNumOfInactScene) {
 					for (int i = 0; i < mNumOfDev; i++) {
-						if (isNonExistDevIndex(mDevInfoList, i)) {
+						if (isExistDevIndex(mDevInfoList, i)) {
 							BluetoothMessage btMsg = new BluetoothMessage();
 							btMsg.setType(BTMessageType.BLE_DATA);
 							btMsg.setIndex(mBTMsgIndex);
@@ -713,7 +732,6 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 						}
 					}
 				}
-				backupSceneList(HomeActivity.this);
 			}
 		}.start();
 	}
@@ -745,7 +763,6 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 						}
 					}
 				}
-				backupSceneList(HomeActivity.this);
 			}
 		}.start();
 	}
@@ -762,7 +779,7 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 			@Override
 			public void onFinish() {
 				mProgDialog.dismiss();
-				
+
 				if (mDevInfoList.size() == 0) {
 					Toast.makeText(getApplicationContext(),
 							"have no any device", Toast.LENGTH_SHORT).show();
@@ -772,13 +789,96 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 				ScenesFragment mSceneFrag = (ScenesFragment) getSupportFragmentManager()
 						.getFragments().get(1);
 				mSceneFrag.updateSceneUI(mSceneList);
+				
+				for (int i = 0; i < mSceneList.size(); i++) {
+					// send request to get list rules of scene;
+					if(!mSceneList.get(i).getActived()){
+						BluetoothMessage msg = new BluetoothMessage();
+						msg.setType(BTMessageType.BLE_DATA);
+						msg.setIndex(mBTMsgIndex);
+						msg.setLength((byte) 10);
+						msg.setCmdIdH((byte) CommandID.GET);
+						msg.setCmdIdL((byte) CommandID.RULE_WITH_INDEX);
+	
+						ByteBuffer payloadBuf = ByteBuffer.allocate(10);
+						payloadBuf.put(mSceneList.get(i).getName().getBytes());
+						payloadBuf.put((byte) 0xFF);
+						payloadBuf.put((byte) 0xFF);
+						msg.setPayload(payloadBuf.array());
+						payloadBuf.clear();
+						mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
+					}
+				}
+				
 			}
 		}.start();
 	}
 
-	// backup scene list
-	public void backupSceneList(HomeActivity mContext) {
-		mContext.mSceneListUpdate.clear();
-		mContext.mSceneListUpdate.addAll(mSceneList);
+	/**
+	 * Get zone list from device list
+	 * 
+	 * @param deviceList
+	 */
+	public ArrayList<Zone_c> getListOfZone(ArrayList<DeviceInfo> deviceList) {
+		ArrayList<DeviceInfo> mDevList = new ArrayList<DeviceInfo>();
+		ArrayList<Zone_c> mZoneList = new ArrayList<Zone_c>();
+		mDevList = deviceList;
+		int mZoneId;
+		int mDevId;
+		Zone_c zone = null;
+		for (int i = 0; i < mDevList.size(); i++) {
+			mZoneId = DataConversion.byte2Unsigned((byte) (mDevList.get(i)
+					.getDevID() >> 24));
+			mDevId = mDevList.get(i).getDevID();
+			if (!searchZone(mZoneList, mZoneId)) {
+				zone = new Zone_c();
+				zone.setName(mZoneId);
+				mZoneList.add(zone);
+			}
+
+			Device_c device = new Device_c();
+			device.setName(mDevId);
+			device.setVal(mDevList.get(i).getDevVal());
+			mZoneList.get(getZoneIndex(mZoneList, mZoneId)).addChildListItem(
+					device);
+		}
+		return mZoneList;
 	}
+
+	/**
+	 * Search zone by ID
+	 * 
+	 * @param parentList
+	 * @param item
+	 * @return
+	 */
+	private boolean searchZone(ArrayList<Zone_c> parentList, int mZoneId) {
+		if (parentList.isEmpty()) {
+			return false;
+		}
+		for (Zone_c parent : parentList) {
+			if (parent.getID() == mZoneId) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Get zone index in List
+	 * 
+	 * @param zoneList
+	 * @param mZoneId
+	 * @return
+	 */
+	private int getZoneIndex(ArrayList<Zone_c> zoneList, int mZoneId) {
+
+		for (int i = 0; i < zoneList.size(); i++) {
+			if (zoneList.get(i).getID() == mZoneId) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
 }

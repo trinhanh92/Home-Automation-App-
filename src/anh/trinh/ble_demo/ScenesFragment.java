@@ -66,13 +66,7 @@ public class ScenesFragment extends Fragment {
 //					btMsg.setCmdIdH((byte) CommandID.GET);
 //					btMsg.setCmdIdL((byte) CommandID.RULE_WITH_INDEX);
 //					btMsg.setPayload(new byte[] {(byte) 0xFF, (byte) 0xFF});
-//					try {
-//						mContext.mProcessMsg.putBLEMessage(mContext.mWriteCharacteristic, btMsg);
-//					} catch (InterruptedException e) {
-//						// TODO Auto-generated catch block
-//						e.printStackTrace();
-//					}
-//					
+//					mContext.mProcessMsg.putBLEMessage(mContext.mWriteCharacteristic, btMsg);
 //					timeout_receive_rule(5000);
 //				}
 //			}
@@ -92,6 +86,7 @@ public class ScenesFragment extends Fragment {
 				mBuilder.setMessage("Please, enter Scene's name!");
 
 				final EditText input = new EditText(getActivity());
+				input.setHint("name can not over 8 characters");
 				input.addTextChangedListener(new TextWatcher() {
 
 					@Override
@@ -131,7 +126,7 @@ public class ScenesFragment extends Fragment {
 									if (sceneName.length() < 8) {
 										for (int i = 0; i < (8 - sceneName
 												.length()); i++) {
-											sceneName.concat("\0");
+											sceneName += "\0";
 										}
 									}
 									Scene_c mScene = new Scene_c();
@@ -178,6 +173,11 @@ public class ScenesFragment extends Fragment {
 		
 	}
 
+	/**
+	 * update list of scene and scene UI
+	 * 
+	 * @param listOfScene
+	 */
 	public void updateSceneUI(ArrayList<Scene_c> listOfScene) {
 		this.listOfScene.clear();
 		this.listOfScene.addAll(listOfScene);
@@ -196,4 +196,16 @@ public class ScenesFragment extends Fragment {
 			}
 		}
 	}
+	
+	
+	/**
+	 * Get list of scene from other contexts
+	 * 
+	 * @return
+	 */
+	public ArrayList<Scene_c> getListOfScene(){
+		return mAdapter.getListOfScene();
+	}
+	
+	
 }
