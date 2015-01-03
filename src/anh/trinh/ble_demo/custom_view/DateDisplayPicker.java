@@ -8,7 +8,6 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.DatePicker;
-import android.widget.NumberPicker;
 import android.widget.TextView;
 
 public class DateDisplayPicker extends TextView implements OnDateSetListener{

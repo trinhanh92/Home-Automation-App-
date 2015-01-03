@@ -1,7 +1,5 @@
 package anh.trinh.ble_demo.data;
 
-import anh.trinh.ble_demo.R;
-
 public class BluetoothMessage {
 	private byte msgType;
 	private short msgIndex;

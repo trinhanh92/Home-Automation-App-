@@ -1,14 +1,8 @@
 package anh.trinh.ble_demo.data;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.nio.ShortBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-
 import android.graphics.Color;
-import anh.trinh.ble_demo.R;
-import anh.trinh.ble_demo.list_view.Device_c;
 
 /**
  * @version 1.0

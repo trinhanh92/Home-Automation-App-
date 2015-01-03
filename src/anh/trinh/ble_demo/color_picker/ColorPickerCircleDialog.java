@@ -12,7 +12,6 @@ import android.graphics.SweepGradient;
 import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.View;
-import anh.trinh.ble_demo.R;
 
 public class ColorPickerCircleDialog extends Dialog {
 

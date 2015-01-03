@@ -1,7 +1,6 @@
 package anh.trinh.ble_demo.list_view;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class Scene_c {
 

@@ -1,6 +1,5 @@
 package anh.trinh.ble_demo;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -9,9 +8,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ExpandableListView;
-import anh.trinh.ble_demo.data.DataConversion;
-import anh.trinh.ble_demo.data.DeviceInfo;
-import anh.trinh.ble_demo.list_view.Device_c;
 import anh.trinh.ble_demo.list_view.DeviceControlExpListAdapter;
 import anh.trinh.ble_demo.list_view.Zone_c;
 

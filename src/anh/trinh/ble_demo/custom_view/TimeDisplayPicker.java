@@ -2,14 +2,12 @@ package anh.trinh.ble_demo.custom_view;
 
 import java.util.Calendar;
 
-import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.app.TimePickerDialog.OnTimeSetListener;
 import android.content.Context;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.TextView;
 import android.widget.TimePicker;
 

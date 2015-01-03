@@ -98,7 +98,6 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 	@Override
 	public View getChildView(int groupPos, int childPos, boolean isLastChild,
 			View convertView, ViewGroup parent) {
-		final View mParent = convertView;
 		// TODO Create child view
 		final Rule_c mRuleObj = (Rule_c) getChild(groupPos, childPos);
 		final int scenePos = groupPos;
@@ -442,7 +441,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 					R.layout.scene_layout, null);
 
 		}
-		CheckBox isActive = (CheckBox) convertView.findViewById(R.id.isActive);
+		final CheckBox isActive = (CheckBox) convertView.findViewById(R.id.isActive);
 		TextView mSceneName = (TextView) convertView
 				.findViewById(R.id.sceneName);
 		final ImageButton btnSceneMenu = (ImageButton) convertView
@@ -453,11 +452,41 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 		btnSceneMenu.setFocusable(false);
 
 		// set active scene
-		isActive.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-
+//		isActive.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+//
+//			@Override
+//			public void onCheckedChanged(CompoundButton v, boolean isChecked) {
+//				((Scene_c) getGroup(scenePos)).setActived(isChecked);
+//				BluetoothMessage btMsg = new BluetoothMessage();
+//				btMsg.setType(BTMessageType.BLE_DATA);
+//				btMsg.setIndex(mContext.mBTMsgIndex);
+//				btMsg.setLength((byte) 9);
+//				btMsg.setCmdIdH((byte) CommandID.SET);
+//				btMsg.setCmdIdL((byte) CommandID.ACT_SCENE_WITH_INDEX);
+//				ByteBuffer payload = ByteBuffer.allocate(9);
+//				payload.put((byte) sceneObj.getID());
+//				payload.put(sceneObj.getName().getBytes());
+//				btMsg.setPayload(payload.array());
+//				payload.clear();
+//				mContext.mProcessMsg.putBLEMessage(
+//						mContext.mWriteCharacteristic, btMsg);
+//				//set last active scene back to inactive 
+//				if (listOfScene.get(scenePos).getActived()) {
+//					for (int i = 0; i < listOfScene.size(); i++) {
+//						if (listOfScene.get(i).getActived() && (i != scenePos)) {
+//							listOfScene.get(i).setActived(false);
+//							notifyDataSetChanged();
+//						}
+//					}
+//				}
+//			}
+//		});
+		
+		isActive.setOnClickListener(new OnClickListener() {
+			
 			@Override
-			public void onCheckedChanged(CompoundButton v, boolean isChecked) {
-				((Scene_c) getGroup(scenePos)).setActived(isChecked);
+			public void onClick(View v) {
+				((Scene_c) getGroup(scenePos)).setActived(isActive.isChecked());
 				BluetoothMessage btMsg = new BluetoothMessage();
 				btMsg.setType(BTMessageType.BLE_DATA);
 				btMsg.setIndex(mContext.mBTMsgIndex);
@@ -470,7 +499,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 				btMsg.setPayload(payload.array());
 				payload.clear();
 				mContext.mProcessMsg.putBLEMessage(
-						mContext.mWriteCharacteristic, btMsg);
+						btMsg);
 				//set last active scene back to inactive 
 				if (listOfScene.get(scenePos).getActived()) {
 					for (int i = 0; i < listOfScene.size(); i++) {
@@ -480,6 +509,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 						}
 					}
 				}
+				
 			}
 		});
 		// button Menu click
@@ -773,6 +803,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 	 * @param jTime
 	 * @return
 	 */
+	@SuppressWarnings("deprecation")
 	private int javaToDosTime(long jTime) {
 		Date d = new Date(jTime);
 		int year = d.getYear() + 1900;
@@ -813,7 +844,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 		btMsg.setCmdIdL((byte) CommandID.NEW_SCENE);
 		btMsg.setPayload(listOfScene.get(scenePos).getName().getBytes());
 		mContext.mProcessMsg
-				.putBLEMessage(mContext.mWriteCharacteristic, btMsg);
+				.putBLEMessage(btMsg);
 
 		new CountDownTimer(11000, 11000) {
 
@@ -878,7 +909,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 			@Override
 			public void afterTextChanged(Editable s) {
 				// TODO Auto-generated method stub
-				if (s.length() > 8) {
+				if (s.toString().getBytes().length > 8) {
 					input.setText("");
 					input.setHint("name can not over 8 characters");
 				}
@@ -894,7 +925,8 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 				String sceneName = input.getText().toString();
 				if (!sceneName.matches(curSceneName) && !sceneName.isEmpty()) {
 					if (sceneName.length() < 8) {
-						for (int i = 0; i < (8 - sceneName.length()); i++) {
+						int remainLen = 8 - sceneName.getBytes().length;
+						for (int i = 0; i < remainLen; i++) {
 							sceneName += "\0";
 						}
 					}
@@ -916,7 +948,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 					btMsg.setPayload(payload.array());
 					payload.clear();
 					mContext.mProcessMsg.putBLEMessage(
-							mContext.mWriteCharacteristic, btMsg);
+							btMsg);
 
 				} else {
 					Toast.makeText(mContext.getApplicationContext(),
@@ -968,7 +1000,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 							btMsg.setCmdIdL((byte) CommandID.REMOVE_SCENE);
 							btMsg.setPayload(curSceneName.getBytes());
 							mContext.mProcessMsg.putBLEMessage(
-									mContext.mWriteCharacteristic, btMsg);
+									btMsg);
 						}
 					});
 

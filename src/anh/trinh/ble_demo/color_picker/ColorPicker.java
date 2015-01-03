@@ -38,7 +38,6 @@ import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
-import anh.trinh.ble_demo.R;
 
 public class ColorPicker extends View {
 

@@ -1,9 +1,6 @@
 package anh.trinh.ble_demo.custom_view;
 
 import java.util.ArrayList;
-import java.util.List;
-
-import android.R.integer;
 import android.content.Context;
 import android.graphics.Color;
 import android.view.View;
@@ -11,9 +8,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.CheckedTextView;
 import android.widget.TextView;
-import android.widget.ToggleButton;
 import anh.trinh.ble_demo.data.DeviceInfo;
-import anh.trinh.ble_demo.list_view.Device_c;
 
 public class DeviceArrayAdapter extends ArrayAdapter<DeviceInfo> {
 	private Context mContext;

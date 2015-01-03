@@ -10,7 +10,6 @@ import android.graphics.Shader;
 import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.View;
-import anh.trinh.ble_demo.R;
 
 public class ColorPickerRetangleDialog extends Dialog {
 	 public interface OnColorChangeListener {  

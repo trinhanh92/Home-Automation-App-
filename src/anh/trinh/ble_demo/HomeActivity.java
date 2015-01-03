@@ -1,13 +1,9 @@
 package anh.trinh.ble_demo;
 
-import java.io.ObjectOutputStream.PutField;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.CountDownLatch;
 
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -29,11 +25,9 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
-import android.text.format.Time;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.TextView;
 import android.widget.Toast;
 import anh.trinh.ble_demo.data.BTMessageType;
 import anh.trinh.ble_demo.data.BluetoothMessage;
@@ -42,12 +36,9 @@ import anh.trinh.ble_demo.data.DeviceInfo;
 import anh.trinh.ble_demo.data.CommandID;
 import anh.trinh.ble_demo.data.ProcessBTMsg;
 import anh.trinh.ble_demo.list_view.Device_c;
-import anh.trinh.ble_demo.list_view.Rule_c;
 import anh.trinh.ble_demo.list_view.Scene_c;
 import anh.trinh.ble_demo.list_view.Zone_c;
-import anh.trinh.ble_demo.thread_sync.ACKisReceived;
-import anh.trinh.ble_demo.thread_sync.BLEWriteThread;
-import anh.trinh.ble_demo.thread_sync.MonitorObject;
+import anh.trinh.ble_demo.thread_sync.ThreadSignal;
 
 public class HomeActivity extends FragmentActivity implements TabListener {
 
@@ -56,7 +47,6 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 	public static final String EXTRAS_DEVICE_NAME = "DEVICE_NAME";
 	public static final String EXTRAS_DEVICE_ADDRESS = "DEVICE_ADDRESS";
 	public static final int TIMEOUT_REC_BLE_MSG = 2000;
-	private TextView mConnectionState;
 	private String mDeviceName;
 	private String mDeviceAddress;
 	private ViewPager viewPager;
@@ -70,9 +60,10 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 
 	private boolean mConnected = false;
 	public boolean mServerReady = false;
-	public MonitorObject mWriteSuccess = new MonitorObject();
-	public boolean mWrited = true;
-	public BluetoothGattCharacteristic mWriteCharacteristic,
+	public volatile boolean mWriteBLESuccess = false;
+	public CountDownTimer mCountDown;
+	public ThreadSignal mBLEThreadSignal = new ThreadSignal();
+	public ArrayList<BluetoothGattCharacteristic> mWriteCharacteristic,
 			mNotifyCharateristic;
 	private BluetoothMessage mBTMsg;
 	public short mBTMsgIndex = 0;
@@ -84,7 +75,7 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 	public ArrayList<Scene_c> mSceneList = new ArrayList<Scene_c>();
 	public ArrayList<Scene_c> mSceneListUpdate = new ArrayList<Scene_c>();
 	public ProcessBTMsg mProcessMsg = new ProcessBTMsg(HomeActivity.this);
-
+	public BleThread mBLEThread;
 	// Code to manage Service life cycle.
 	private final ServiceConnection mServiceConnection = new ServiceConnection() {
 
@@ -133,11 +124,11 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 			} else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED
 					.equals(action)) {
 				// get Server's data
-				// mBLEWriteThread.start();
 				getServerDeviceData();
 			} else if (BluetoothLeService.ACTION_DATA_NOTIFY.equals(action)) {
 				Log.i(TAG, "new data indicate");
-				mBluetoothLeService.readCharacteristic(mNotifyCharateristic);
+				mBluetoothLeService.readCharacteristic(mNotifyCharateristic
+						.get(0));
 				// receiveBTMessage(intent);
 			} else if (BluetoothLeService.ACTION_DATA_READ.equals(action)) {
 				// receive message from CC
@@ -145,10 +136,9 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 				receiveBTMessage(intent);
 			} else if (BluetoothLeService.ACTION_DATA_WRITE.equals(action)) {
 				Log.i(TAG, "write successfully");
-				mWrited = true;
-				synchronized (mWriteSuccess) {
-					mWriteSuccess.notify();
-				}
+				// mBLEThreadSignal.sendSignal();
+				// mBLEThread.interrupt();
+				// mWriteBLESuccess = true;
 			}
 		}
 	};
@@ -172,7 +162,7 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 				mMsg.setCmdIdH((byte) CommandID.GET);
 				mMsg.setCmdIdL((byte) CommandID.DEV_WITH_INDEX);
 				mMsg.setPayload(DataConversion.int2ByteArr(0xFFFFFFFF));
-				mProcessMsg.putBLEMessage(mWriteCharacteristic, mMsg);
+				mProcessMsg.putBLEMessage(mMsg);
 				Log.i(TAG, "send DEV WITH INDEX");
 
 				break;
@@ -181,7 +171,7 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 				Log.i(TAG, "Received Msg");
 				break;
 			case CommandID.DEV_VAL:
-				mProcessMsg.putBLEMessage(mWriteCharacteristic, btMsg);
+				mProcessMsg.putBLEMessage(btMsg);
 				break;
 			case CommandID.NUM_OF_SCENES:
 				// Request to get active scene
@@ -191,8 +181,23 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 				mMsg.setCmdIdH((byte) CommandID.GET);
 				mMsg.setCmdIdL((byte) CommandID.ACT_SCENE_WITH_INDEX);
 				mMsg.setPayload(new byte[] { (byte) 0xFF });
-				mProcessMsg.putBLEMessage(mWriteCharacteristic, mMsg);
+				mProcessMsg.putBLEMessage(mMsg);
+				break;
+			case CommandID.NUM_OF_RULES:
+				String sceneName = (String) msg.obj;
+				mMsg.setType(BTMessageType.BLE_DATA);
+				mMsg.setIndex(mBTMsgIndex);
+				mMsg.setLength((byte) 10);
+				mMsg.setCmdIdH((byte) CommandID.GET);
+				mMsg.setCmdIdL((byte) CommandID.RULE_WITH_INDEX);
 
+				ByteBuffer payloadBuf = ByteBuffer.allocate(10);
+				payloadBuf.put(sceneName.getBytes());
+				payloadBuf.put((byte) 0xFF);
+				payloadBuf.put((byte) 0xFF);
+				mMsg.setPayload(payloadBuf.array());
+				payloadBuf.clear();
+				mProcessMsg.putBLEMessage(mMsg);
 				break;
 
 			default:
@@ -253,6 +258,9 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 		Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
 		bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
 
+		// start ble thread
+		mBLEThread = new BleThread(HomeActivity.this);
+		mBLEThread.start();
 	}
 
 	@Override
@@ -277,6 +285,7 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 		super.onDestroy();
 		unbindService(mServiceConnection);
 		mBluetoothLeService = null;
+		mBLEThread.mHandler.getLooper().quit();
 	}
 
 	@Override
@@ -332,8 +341,9 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 	 * @param gattServices
 	 * @return
 	 */
-	private BluetoothGattCharacteristic getWriteCharacteristic(
+	private ArrayList<BluetoothGattCharacteristic> getWriteCharacteristic(
 			List<BluetoothGattService> gattServices) {
+		ArrayList<BluetoothGattCharacteristic> mListChar = new ArrayList<BluetoothGattCharacteristic>();
 		if (gattServices == null) {
 			return null;
 		}
@@ -346,12 +356,12 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 			for (BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
 				charaProp = gattCharacteristic.getProperties();
 				if ((charaProp & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0) {
-					return gattCharacteristic;
+					mListChar.add(gattCharacteristic);
 				}
 			}
 		}
 
-		return null;
+		return mListChar;
 	}
 
 	/**
@@ -360,8 +370,9 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 	 * @param gattServices
 	 * @return
 	 */
-	private BluetoothGattCharacteristic getReadCharacteristic(
+	private ArrayList<BluetoothGattCharacteristic> getReadCharacteristic(
 			List<BluetoothGattService> gattServices) {
+		ArrayList<BluetoothGattCharacteristic> mListChar = new ArrayList<BluetoothGattCharacteristic>();
 		if (gattServices == null) {
 			return null;
 		}
@@ -375,12 +386,12 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 				charaProp = gattCharacteristic.getProperties();
 				if ((charaProp & BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0
 						| (charaProp & BluetoothGattCharacteristic.PROPERTY_INDICATE) > 0) {
-					return gattCharacteristic;
+					mListChar.add(gattCharacteristic);
 				}
 			}
 		}
 
-		return null;
+		return mListChar;
 	}
 
 	private void getServerDeviceData() {
@@ -392,16 +403,17 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 		// Get notification Characteristic
 		mNotifyCharateristic = getReadCharacteristic(mBluetoothLeService
 				.getSupportedGattServices());
-		int mCharaProp = mWriteCharacteristic.getProperties();
-		Log.i(TAG, "uuid:" + mWriteCharacteristic.getUuid().toString());
-		Log.i(TAG, "uuid:" + mNotifyCharateristic.getUuid().toString());
+		// mWriteCharacteristic.getProperties();
+		// Log.i(TAG, "uuid:" + mWriteCharacteristic.getUuid().toString());
+		// Log.i(TAG, "uuid:" + mNotifyCharateristic.getUuid().toString());
 		if (mWriteCharacteristic == null) {
 			showDialog("BLE device don't support to write :(");
 			finish();
 		}
 		if (mNotifyCharateristic != null) {
 			mBluetoothLeService.setCharacteristicNotification(
-					mNotifyCharateristic, true);
+					mNotifyCharateristic.get(0), true);
+
 		}
 
 		/* step by step */
@@ -410,7 +422,7 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 		// Step1: Request number of device
 		requestNumOfDev(200);
 		// Step2: After timeout request device with index if missed
-		requestDevIndexAgain(startTime + 6000);
+		// requestDevIndexAgain(startTime + 6000);
 		// Step3: Request Zone name;
 		requestZoneName(startTime + 6500);
 		// Step4: Display Device List
@@ -421,7 +433,7 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 		// Step6: Request Rule with index
 		requestRuleIndex(startTime + 10000);
 		// TODO: Step7: Request Rule with index again if missed
-//		requestRuleIndexAgain(startTime + 13000);
+		// requestRuleIndexAgain(startTime + 13000);
 		// Step9: Request inactscene list
 		requestInactiveScene(startTime + 14000);
 		// Step10: Display Scene List
@@ -437,6 +449,10 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 	private void receiveBTMessage(Intent intent) {
 		mBTMsg = mProcessMsg.getBLEMessage(intent);
 		mProcessMsg.processBTMessage(mBTMsg);
+		// Message msg =
+		// mBLEThread.mHandler.obtainMessage(BTMessageType.BLE_READ,
+		// mBTMsg);
+		// mBLEThread.mHandler.sendMessage(msg);
 	}
 
 	/**
@@ -524,14 +540,13 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 				msg.setLength((byte) 0);
 				msg.setCmdIdH((byte) CommandID.GET);
 				msg.setCmdIdL((byte) CommandID.NUM_OF_DEVS);
-				mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
+				mProcessMsg.putBLEMessage(msg);
 				Log.i(TAG, "Get num of dev");
 			}
 		}.start();
 	}
 
 	private void requestZoneName(int timeout) {
-		// request zoneName
 		new CountDownTimer(timeout, timeout) {
 
 			@Override
@@ -544,6 +559,8 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 				mZoneList = getListOfZone(mDevInfoList);
 				BluetoothMessage btMsg = new BluetoothMessage();
 				for (int i = 0; i < mZoneList.size(); i++) {
+					Log.i(TAG, "request zone's name "
+							+ mZoneList.get(i).getID());			
 					btMsg.setType(BTMessageType.BLE_DATA);
 					btMsg.setIndex(mBTMsgIndex);
 					btMsg.setLength((byte) 1);
@@ -551,7 +568,9 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 					btMsg.setCmdIdL((byte) CommandID.ZONE_NAME);
 					btMsg.setPayload(new byte[] { (byte) mZoneList.get(i)
 							.getID() });
-					mProcessMsg.putBLEMessage(mWriteCharacteristic, btMsg);
+					mProcessMsg.putBLEMessage(btMsg);
+					
+					for(int k = 100000000; k > 0 ; k--);
 				}
 
 			}
@@ -573,6 +592,7 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 				// TODO Auto-generated method stub
 				if (!mDevInfoList.isEmpty()) {
 					// TODO Auto-generated method stub
+					// mZoneList = getListOfZone(mDevInfoList);
 					DeviceControlFragment mDeviceFrag = (DeviceControlFragment) getSupportFragmentManager()
 							.getFragments().get(0);
 					// mZoneList = getListOfZone(mDevInfoList);
@@ -603,8 +623,7 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 							btMsg.setCmdIdH((byte) CommandID.GET);
 							btMsg.setCmdIdL((byte) CommandID.DEV_WITH_INDEX);
 							btMsg.setPayload(DataConversion.int2ByteArr(i));
-							mProcessMsg.putBLEMessage(mWriteCharacteristic,
-									btMsg);
+							mProcessMsg.putBLEMessage(btMsg);
 						}
 					}
 				}
@@ -625,13 +644,14 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 			@Override
 			public void onFinish() {
 				// send request to get number of scene;
+				Log.i(TAG, "request number of scene");
 				BluetoothMessage msg = new BluetoothMessage();
 				msg.setType(BTMessageType.BLE_DATA);
 				msg.setIndex(mBTMsgIndex);
 				msg.setLength((byte) 0);
 				msg.setCmdIdH((byte) CommandID.GET);
 				msg.setCmdIdL((byte) CommandID.NUM_OF_SCENES);
-				mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
+				mProcessMsg.putBLEMessage(msg);
 
 			}
 		}.start();
@@ -650,6 +670,7 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 			@Override
 			public void onFinish() {
 				// Request to get inactive scene
+				Log.i(TAG, "request inactive scene");
 				BluetoothMessage mMsg = new BluetoothMessage();
 				mMsg.setType(BTMessageType.BLE_DATA);
 				mMsg.setIndex(mBTMsgIndex);
@@ -657,7 +678,7 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 				mMsg.setCmdIdH((byte) CommandID.GET);
 				mMsg.setCmdIdL((byte) CommandID.INACT_SCENE_WITH_INDEX);
 				mMsg.setPayload(new byte[] { (byte) 0xFF });
-				mProcessMsg.putBLEMessage(mWriteCharacteristic, mMsg);
+				mProcessMsg.putBLEMessage(mMsg);
 
 			}
 		}.start();
@@ -678,21 +699,21 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 				// TODO Auto-generated method stub
 				for (int i = 0; i < mSceneList.size(); i++) {
 					// send request to get list rules of scene;
-					if(mSceneList.get(i).getActived()){
+					if (mSceneList.get(i).getActived()) {
 						BluetoothMessage msg = new BluetoothMessage();
 						msg.setType(BTMessageType.BLE_DATA);
 						msg.setIndex(mBTMsgIndex);
 						msg.setLength((byte) 10);
 						msg.setCmdIdH((byte) CommandID.GET);
 						msg.setCmdIdL((byte) CommandID.RULE_WITH_INDEX);
-	
+
 						ByteBuffer payloadBuf = ByteBuffer.allocate(10);
 						payloadBuf.put(mSceneList.get(i).getName().getBytes());
 						payloadBuf.put((byte) 0xFF);
 						payloadBuf.put((byte) 0xFF);
 						msg.setPayload(payloadBuf.array());
 						payloadBuf.clear();
-						mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
+						mProcessMsg.putBLEMessage(msg);
 					}
 				}
 			}
@@ -700,10 +721,9 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 	}
 
 	private void requestRuleIndexAgain(int timeout) {
-		String sceneName;
 		for (int i = 0; i < mSceneList.size(); i++) {
 			if (mSceneList.get(i).getActived() == true) {
-				sceneName = mSceneList.get(i).getName();
+				mSceneList.get(i).getName();
 			}
 		}
 		new CountDownTimer(timeout, timeout) {
@@ -725,10 +745,9 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 							btMsg.setIndex(mBTMsgIndex);
 							btMsg.setLength((byte) 4);
 							btMsg.setCmdIdH((byte) CommandID.GET);
-							btMsg.setCmdIdL((byte) CommandID.DEV_WITH_INDEX);
+							btMsg.setCmdIdL((byte) CommandID.RULE_WITH_INDEX);
 							btMsg.setPayload(DataConversion.int2ByteArr(i));
-							mProcessMsg.putBLEMessage(mWriteCharacteristic,
-									btMsg);
+							mProcessMsg.putBLEMessage(btMsg);
 						}
 					}
 				}
@@ -758,8 +777,7 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 							btMsg.setCmdIdH((byte) CommandID.GET);
 							btMsg.setCmdIdL((byte) CommandID.ACT_SCENE_WITH_INDEX);
 							btMsg.setPayload(DataConversion.int2ByteArr(i));
-							mProcessMsg.putBLEMessage(mWriteCharacteristic,
-									btMsg);
+							mProcessMsg.putBLEMessage(btMsg);
 						}
 					}
 				}
@@ -789,27 +807,21 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 				ScenesFragment mSceneFrag = (ScenesFragment) getSupportFragmentManager()
 						.getFragments().get(1);
 				mSceneFrag.updateSceneUI(mSceneList);
-				
-				for (int i = 0; i < mSceneList.size(); i++) {
-					// send request to get list rules of scene;
-					if(!mSceneList.get(i).getActived()){
-						BluetoothMessage msg = new BluetoothMessage();
-						msg.setType(BTMessageType.BLE_DATA);
-						msg.setIndex(mBTMsgIndex);
-						msg.setLength((byte) 10);
-						msg.setCmdIdH((byte) CommandID.GET);
-						msg.setCmdIdL((byte) CommandID.RULE_WITH_INDEX);
-	
-						ByteBuffer payloadBuf = ByteBuffer.allocate(10);
-						payloadBuf.put(mSceneList.get(i).getName().getBytes());
-						payloadBuf.put((byte) 0xFF);
-						payloadBuf.put((byte) 0xFF);
-						msg.setPayload(payloadBuf.array());
-						payloadBuf.clear();
-						mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
-					}
-				}
-				
+
+				// for (int i = 0; i < mSceneList.size(); i++) {
+				// // send request to get list rules of scene;
+				// if(!mSceneList.get(i).getActived()){
+				// BluetoothMessage msg = new BluetoothMessage();
+				// msg.setType(BTMessageType.BLE_DATA);
+				// msg.setIndex(mBTMsgIndex);
+				// msg.setLength((byte) 8);
+				// msg.setCmdIdH((byte) CommandID.GET);
+				// msg.setCmdIdL((byte) CommandID.NUM_OF_RULES);
+				// msg.setPayload(mSceneList.get(i).getName().getBytes());
+				// mProcessMsg.putBLEMessage(mWriteCharacteristic, msg);
+				// }
+				// }
+
 			}
 		}.start();
 	}
@@ -879,6 +891,29 @@ public class HomeActivity extends FragmentActivity implements TabListener {
 			}
 		}
 		return -1;
+	}
+
+	/**
+	 * 
+	 * @param timeout
+	 */
+	public void ble_timeout_send(int timeout) {
+		new CountDownTimer(timeout, timeout) {
+
+			@Override
+			public void onTick(long millisUntilFinished) {
+				if (mWriteBLESuccess == true) {
+					cancel();
+				}
+
+			}
+
+			@Override
+			public void onFinish() {
+				mWriteBLESuccess = true;
+
+			}
+		}.start();
 	}
 
 }

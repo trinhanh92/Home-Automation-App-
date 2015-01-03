@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.widget.RelativeLayout;
 import android.widget.RelativeLayout.LayoutParams;
-import anh.trinh.ble_demo.R;
 
 public class ColorPickerDialog extends AlertDialog {
 

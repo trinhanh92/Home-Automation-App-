@@ -2,7 +2,6 @@ package anh.trinh.ble_demo.custom_view;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.Spinner;
 
 public class CustomSpinner extends Spinner {

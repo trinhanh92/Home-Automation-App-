@@ -38,6 +38,7 @@ public final class R {
     }
     public static final class dimen {
         /**  Default screen margins, per the Android Design guidelines. 
+ Default screen margins, per the Android Design guidelines. 
 
          Customize dimensions originally defined in res/values/dimens.xml (such as
          screen margins) for sw720dp devices (e.g. 10" tablets) in landscape here.
@@ -45,8 +46,10 @@ public final class R {
          */
         public static final int activity_horizontal_margin=0x7f060000;
         public static final int activity_vertical_margin=0x7f060001;
-        public static final int dev_blink_size=0x7f060003;
-        public static final int dev_icon_size=0x7f060002;
+        public static final int blink_seekbar_size=0x7f060002;
+        public static final int dev_blink_size=0x7f060005;
+        public static final int dev_icon_size=0x7f060004;
+        public static final int dimmer_seekbar_size=0x7f060003;
     }
     public static final class drawable {
         public static final int add_button_selector=0x7f020000;
@@ -71,26 +74,29 @@ public final class R {
         public static final int ic_launcher=0x7f020013;
         public static final int inknon=0x7f020014;
         public static final int input_dev_indicate=0x7f020015;
-        public static final int light_sensor=0x7f020016;
-        public static final int motor=0x7f020017;
-        public static final int next=0x7f020018;
-        public static final int output_dev_indicate=0x7f020019;
-        public static final int pir_sensor=0x7f02001a;
-        public static final int prev=0x7f02001b;
-        public static final int progress_bg=0x7f02001c;
-        public static final int rgb_led=0x7f02001d;
-        public static final int seek_thumb=0x7f02001e;
-        public static final int seek_thumb2=0x7f02001f;
-        public static final int seek_thumb3=0x7f020020;
-        public static final int switch_btn=0x7f020021;
-        public static final int tab_actionbar_background=0x7f020022;
-        public static final int tab_bar_background_selected=0x7f020023;
-        public static final int tab_bar_background_selected_pressed=0x7f020024;
-        public static final int tab_text_selector=0x7f020025;
-        public static final int temp_sensor=0x7f020026;
-        public static final int toggle_off=0x7f020027;
-        public static final int toggle_on=0x7f020028;
-        public static final int toggle_selector=0x7f020029;
+        public static final int level_bulb_icon=0x7f020016;
+        public static final int light_sensor=0x7f020017;
+        public static final int motor=0x7f020018;
+        public static final int next=0x7f020019;
+        public static final int output_dev_indicate=0x7f02001a;
+        public static final int pir_sensor=0x7f02001b;
+        public static final int prev=0x7f02001c;
+        public static final int progress_bg=0x7f02001d;
+        public static final int rgb_led=0x7f02001e;
+        public static final int seek_thumb=0x7f02001f;
+        public static final int seek_thumb2=0x7f020020;
+        public static final int seek_thumb3=0x7f020021;
+        public static final int soil_icon=0x7f020022;
+        public static final int switch_btn=0x7f020023;
+        public static final int switch_icon=0x7f020024;
+        public static final int tab_actionbar_background=0x7f020025;
+        public static final int tab_bar_background_selected=0x7f020026;
+        public static final int tab_bar_background_selected_pressed=0x7f020027;
+        public static final int tab_text_selector=0x7f020028;
+        public static final int temp_sensor=0x7f020029;
+        public static final int toggle_off=0x7f02002a;
+        public static final int toggle_on=0x7f02002b;
+        public static final int toggle_selector=0x7f02002c;
     }
     public static final class id {
         public static final int FrameLayout1=0x7f0a0009;

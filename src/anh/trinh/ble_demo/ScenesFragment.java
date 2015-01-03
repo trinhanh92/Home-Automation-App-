@@ -2,6 +2,7 @@ package anh.trinh.ble_demo;
 
 import java.util.ArrayList;
 
+import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
@@ -14,17 +15,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemLongClickListener;
+import android.widget.AbsListView;
+import android.widget.AbsListView.OnScrollListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ExpandableListView;
-import android.widget.ExpandableListView.OnGroupExpandListener;
-import android.widget.Toast;
-import anh.trinh.ble_demo.data.BTMessageType;
-import anh.trinh.ble_demo.data.BluetoothMessage;
-import anh.trinh.ble_demo.data.CommandID;
-import anh.trinh.ble_demo.data.DataConversion;
 import anh.trinh.ble_demo.list_view.SceneExpListAdapter;
 import anh.trinh.ble_demo.list_view.Scene_c;
 
@@ -52,26 +47,55 @@ public class ScenesFragment extends Fragment {
 		mSceneExpList.setGroupIndicator(null);
 
 		// listen group expand to get rule list of inactive scene
-//		mSceneExpList.setOnGroupExpandListener(new OnGroupExpandListener() {
+		// mSceneExpList.setOnGroupExpandListener(new OnGroupExpandListener() {
+		//
+		// @Override
+		// public void onGroupExpand(int groupPosition) {
+		// // TODO Auto-generated method stub
+		// if ((mContext.mSceneList.get(groupPosition).getNumOfRule() != 0)
+		// && !mContext.mSceneList.get(groupPosition).getActived()) {
+		// BluetoothMessage btMsg = new BluetoothMessage();
+		// btMsg.setType(BTMessageType.BLE_DATA);
+		// btMsg.setIndex(mContext.mBTMsgIndex);
+		// btMsg.setLength((byte) 10);
+		// btMsg.setCmdIdH((byte) CommandID.GET);
+		// btMsg.setCmdIdL((byte) CommandID.RULE_WITH_INDEX);
+		// ByteBuffer payload = ByteBuffer.allocate(10);
+		// payload.put(mContext.mSceneList.get(groupPosition)
+		// .getName().getBytes());
+		// payload.put(new byte[] { (byte) 0xFF, (byte) 0xFF });
+		// btMsg.setPayload(payload.array());
+		// payload.clear();
+		// mContext.mProcessMsg.putBLEMessage(
+		// mContext.mWriteCharacteristic, btMsg);
+		// timeout_receive_rule(5000);
+		// }
+		// }
+		// });
+
+		// list view scroll listener
+//		mSceneExpList.setOnScrollListener(new OnScrollListener() {
 //
 //			@Override
-//			public void onGroupExpand(int groupPosition) {
-//				// TODO Auto-generated method stub
-//				if ((listOfScene.get(groupPosition).getNumOfRule() == 0)
-//						&& !listOfScene.get(groupPosition).getActived()) {
-//					BluetoothMessage btMsg = new BluetoothMessage();
-//					btMsg.setType(BTMessageType.BLE_DATA);
-//					btMsg.setIndex(mContext.mBTMsgIndex);
-//					btMsg.setLength((byte) 2);
-//					btMsg.setCmdIdH((byte) CommandID.GET);
-//					btMsg.setCmdIdL((byte) CommandID.RULE_WITH_INDEX);
-//					btMsg.setPayload(new byte[] {(byte) 0xFF, (byte) 0xFF});
-//					mContext.mProcessMsg.putBLEMessage(mContext.mWriteCharacteristic, btMsg);
-//					timeout_receive_rule(5000);
+//			public void onScrollStateChanged(AbsListView view, int scrollState) {
+//
+//			}
+//
+//			@Override
+//			public void onScroll(AbsListView view, int firstVisibleItem,
+//					int visibleItemCount, int totalItemCount) {
+//				if (firstVisibleItem > 1) {
+//					mContext.getActionBar().setNavigationMode(
+//							ActionBar.NAVIGATION_MODE_STANDARD);
+//					mContext.invalidateOptionsMenu();
+//				} else {
+//					mContext.getActionBar().setNavigationMode(
+//							ActionBar.NAVIGATION_MODE_TABS);
+//					mContext.invalidateOptionsMenu();
 //				}
+//
 //			}
 //		});
-
 		//
 		btnAddScene.setOnClickListener(new OnClickListener() {
 
@@ -106,7 +130,7 @@ public class ScenesFragment extends Fragment {
 					@Override
 					public void afterTextChanged(Editable s) {
 						// TODO Auto-generated method stub
-						if (s.length() > 8) {
+						if (s.toString().getBytes().length > 8) {
 							input.setText("");
 							input.setHint("name can not over 8 characters");
 						}
@@ -123,9 +147,10 @@ public class ScenesFragment extends Fragment {
 								// TODO Auto-generated method stub
 								String sceneName = input.getText().toString();
 								if (!sceneName.isEmpty()) {
-									if (sceneName.length() < 8) {
-										for (int i = 0; i < (8 - sceneName
-												.length()); i++) {
+									if (sceneName.getBytes().length < 8) {
+										int remainLen = 8 - sceneName
+												.toString().length();
+										for (int i = 0; i < remainLen; i++) {
 											sceneName += "\0";
 										}
 									}
@@ -158,19 +183,19 @@ public class ScenesFragment extends Fragment {
 	// time out to receive rule inactive scene
 	protected void timeout_receive_rule(int timeout) {
 		new CountDownTimer(timeout, timeout) {
-			
+
 			@Override
 			public void onTick(long millisUntilFinished) {
 				// TODO Auto-generated method stub
-				
+
 			}
-			
+
 			@Override
 			public void onFinish() {
 				updateSceneUI(mContext.mSceneList);
 			}
-		};
-		
+		}.start();
+
 	}
 
 	/**
@@ -196,16 +221,14 @@ public class ScenesFragment extends Fragment {
 			}
 		}
 	}
-	
-	
+
 	/**
 	 * Get list of scene from other contexts
 	 * 
 	 * @return
 	 */
-	public ArrayList<Scene_c> getListOfScene(){
+	public ArrayList<Scene_c> getListOfScene() {
 		return mAdapter.getListOfScene();
 	}
-	
-	
+
 }

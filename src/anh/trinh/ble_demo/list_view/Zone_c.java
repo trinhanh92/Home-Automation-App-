@@ -1,6 +1,5 @@
 package anh.trinh.ble_demo.list_view;
 
-import anh.trinh.ble_demo.R;
 import java.util.ArrayList;
 
 

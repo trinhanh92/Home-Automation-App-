@@ -2,44 +2,31 @@ package anh.trinh.ble_demo.list_view;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Formatter;
-
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
-import android.opengl.Visibility;
-import android.os.Message;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.View.OnLongClickListener;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemSelectedListener;
-import android.widget.ArrayAdapter;
 import android.widget.BaseExpandableListAdapter;
-import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 //import android.widget.
 import anh.trinh.ble_demo.HomeActivity;
 import anh.trinh.ble_demo.R;
-import anh.trinh.ble_demo.color_picker.ColorPickerCircleDialog;
-import anh.trinh.ble_demo.color_picker.ColorPickerCircleDialog.OnColorChangedListener;
 import anh.trinh.ble_demo.color_picker.ColorPickerDialog;
 import anh.trinh.ble_demo.color_picker.ColorPickerDialog.OnColorSelectedListener;
-import anh.trinh.ble_demo.color_picker.ColorPickerRetangleDialog;
-import anh.trinh.ble_demo.color_picker.ColorPickerRetangleDialog.OnColorChangeListener;
 import anh.trinh.ble_demo.data.BTMessageType;
 import anh.trinh.ble_demo.data.BluetoothMessage;
 import anh.trinh.ble_demo.data.CommandID;
@@ -48,7 +35,6 @@ import anh.trinh.ble_demo.data.DeviceTypeDef;
 
 public class DeviceControlExpListAdapter extends BaseExpandableListAdapter {
 
-	private static final String TAG = "ExpandableListView";
 	private HomeActivity mContext;
 	private ArrayList<Zone_c> listOfRoom;
 
@@ -86,7 +72,7 @@ public class DeviceControlExpListAdapter extends BaseExpandableListAdapter {
 	public View getGroupView(final int groupPos, boolean isExpanded,
 			View convertView, ViewGroup parent) {
 		// TODO Auto-generated method stub
-		final Zone_c parentObj = (Zone_c) getGroup(groupPos);
+		final Zone_c zoneObj = (Zone_c) getGroup(groupPos);
 
 		if (convertView == null) {
 			LayoutInflater inf = (LayoutInflater) mContext
@@ -94,14 +80,36 @@ public class DeviceControlExpListAdapter extends BaseExpandableListAdapter {
 			convertView = inf.inflate(R.layout.group_list, null);
 
 		}
-		final TextView mZoneName = (TextView) convertView.findViewById(R.id.roomName);
+		final TextView mZoneName = (TextView) convertView
+				.findViewById(R.id.roomName);
 		TextView mNumDev = (TextView) convertView.findViewById(R.id.numOfDev);
 		ImageButton btnRename = (ImageButton) convertView
 				.findViewById(R.id.btnRename);
 
 		btnRename.setFocusable(false);
-		mZoneName.setText(parentObj.getName());
-		mNumDev.setText("(" + Integer.toString(parentObj.getChildCount())
+		mZoneName.setText(zoneObj.getName());
+		// set zone view color
+		switch (zoneObj.getID() % 5) {
+		case 0:
+			convertView.setBackgroundResource(R.color.accent_pink);
+			break;
+		case 1:
+			convertView.setBackgroundResource(R.color.blue);
+			break;
+		case 2:
+			convertView.setBackgroundResource(R.color.brown);
+			break;
+		case 3:
+			convertView.setBackgroundResource(R.color.deep_orange);
+			break;
+		case 4:
+			convertView.setBackgroundResource(R.color.deep_purple);
+			break;
+		default:
+			convertView.setBackgroundResource(R.color.cyan);
+			break;
+		}
+		mNumDev.setText("(" + Integer.toString(zoneObj.getChildCount())
 				+ " devs)");
 
 		// button rename click listener
@@ -155,8 +163,8 @@ public class DeviceControlExpListAdapter extends BaseExpandableListAdapter {
 										zoneName += "\0";
 									}
 								}
-								
-								parentObj.setName(zoneName);
+
+								zoneObj.setName(zoneName);
 								mZoneName.setText(zoneName);
 								listOfRoom.get(groupPos).setName(zoneName);
 								BluetoothMessage btMsg = new BluetoothMessage();
@@ -166,12 +174,12 @@ public class DeviceControlExpListAdapter extends BaseExpandableListAdapter {
 								btMsg.setCmdIdH((byte) CommandID.SET);
 								btMsg.setCmdIdL((byte) CommandID.ZONE_NAME);
 								ByteBuffer payload = ByteBuffer.allocate(17);
-								payload.put((byte) parentObj.getID());
+								payload.put((byte) zoneObj.getID());
 								payload.put(zoneName.getBytes());
 								btMsg.setPayload(payload.array());
 								payload.clear();
 								mContext.mProcessMsg.putBLEMessage(
-										mContext.mWriteCharacteristic, btMsg);
+										btMsg);
 
 							}
 						});
@@ -478,7 +486,7 @@ public class DeviceControlExpListAdapter extends BaseExpandableListAdapter {
 			}
 			break;
 		case DeviceTypeDef.LEVEL_BULB:
-			mDevViewHolder.mDevImg.setImageResource(R.drawable.bulb);
+			mDevViewHolder.mDevImg.setImageResource(R.drawable.level_bulb_icon);
 
 			// String[] arrBlinkVal =
 			// {"1","2","3","4","5","6","7","8","9","10"};
@@ -578,7 +586,7 @@ public class DeviceControlExpListAdapter extends BaseExpandableListAdapter {
 			mDevViewHolder.mDevVal.setText(Short.toString(devVal) + "\u2103");
 			break;
 		case DeviceTypeDef.SOIL_HUMI:
-			mDevViewHolder.mDevImg.setImageResource(R.drawable.inknon);
+			mDevViewHolder.mDevImg.setImageResource(R.drawable.soil_icon);
 			switch (devVal) {
 			case 0:
 				mDevViewHolder.mDevVal.setText("in water");
@@ -743,6 +751,7 @@ public class DeviceControlExpListAdapter extends BaseExpandableListAdapter {
 					+ Integer.toHexString(devVal & 0xFFFF));
 			mDevViewHolder.mColorPicker.setBackgroundColor(DataConversion
 					.color16BitTo32Bit(devVal));
+			// if click: set 15bit - color as picker chooser
 			mDevViewHolder.mColorPicker
 					.setOnClickListener(new OnClickListener() {
 
@@ -770,9 +779,20 @@ public class DeviceControlExpListAdapter extends BaseExpandableListAdapter {
 							mColorPickerDialog.show();
 						}
 					});
+
+			// if long click: set toggle color in table color
+			mDevViewHolder.mColorPicker
+					.setOnLongClickListener(new OnLongClickListener() {
+
+						@Override
+						public boolean onLongClick(View v) {
+							sendValUpdated(devType, (short) 0x8000);
+							return false;
+						}
+					});
 			break;
 		case DeviceTypeDef.SWITCH:
-			mDevViewHolder.mDevImg.setImageResource(R.drawable.switch_btn);
+			mDevViewHolder.mDevImg.setImageResource(R.drawable.switch_icon);
 			mDevViewHolder.mOnOff.setClickable(false);
 			if (devVal == 0) {
 				mDevViewHolder.mOnOff.setChecked(false);
@@ -864,6 +884,7 @@ public class DeviceControlExpListAdapter extends BaseExpandableListAdapter {
 	 * @param devInfo
 	 */
 	private void sendValUpdated(int devType, short devVal) {
+		Log.i("BLE SEND", "send dev val");
 		BluetoothMessage bleMsg = new BluetoothMessage();
 		bleMsg.setType(BTMessageType.BLE_DATA);
 		bleMsg.setIndex(mContext.mBTMsgIndex);
@@ -871,9 +892,10 @@ public class DeviceControlExpListAdapter extends BaseExpandableListAdapter {
 		bleMsg.setCmdIdH((byte) CommandID.SET);
 		bleMsg.setCmdIdL((byte) CommandID.DEV_VAL);
 		bleMsg.setPayload(DataConversion.devInfo2ByteArr(devType, devVal));
-		final Message msg = mContext.mMsgHandler.obtainMessage(
-				CommandID.DEV_VAL, (Object) bleMsg);
-		mContext.mMsgHandler.sendMessage(msg);
+		// final Message msg = mContext.mMsgHandler.obtainMessage(
+		// CommandID.DEV_VAL, bleMsg);
+		// mContext.mMsgHandler.sendMessage(msg);
+		mContext.mProcessMsg.putBLEMessage(bleMsg);
 
 	}
 

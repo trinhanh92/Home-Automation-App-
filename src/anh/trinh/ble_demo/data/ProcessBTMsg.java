@@ -21,19 +21,11 @@ package anh.trinh.ble_demo.data;
  * 
  **********************************************************************************************/
 
-import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
-import java.text.Format;
 import java.util.ArrayList;
-import java.util.Formatter;
-
-import javax.xml.transform.Templates;
-
-import android.R.integer;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.content.Intent;
-import android.os.Handler;
-import android.os.Handler.Callback;
+import android.os.Bundle;
 import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
@@ -48,13 +40,14 @@ import anh.trinh.ble_demo.list_view.Scene_c;
 public class ProcessBTMsg {
 	private HomeActivity mContext;
 	private final static String TAG = "ProcessMessage";
-	private final static int BLE_WRITE_DATA = 0;
-	private final static int BLE_WRITE_ACK = 1;
 
 	public ProcessBTMsg(HomeActivity mContext) {
 		this.mContext = mContext;
 	}
 
+	/*********************************************************************************************
+ * 
+ *********************************************************************************************/
 	/**
 	 * Get BLE device data
 	 * 
@@ -75,14 +68,11 @@ public class ProcessBTMsg {
 
 	/**
 	 * Send data to BLE device
-	 * 
-	 * @param characteristic
 	 * @param msg
+	 * 
 	 * @return
 	 */
-	public void putBLEMessage(BluetoothGattCharacteristic characteristic,
-			BluetoothMessage msg) {
-		int timeout;
+	public void putBLEMessage(BluetoothMessage msg) {
 		ByteBuffer sendBuf = ByteBuffer.allocate(msg.getLength() + 6);
 		sendBuf.put(msg.getType());
 		sendBuf.put(DataConversion.short2ByteArr(msg.getIndex()));
@@ -92,34 +82,38 @@ public class ProcessBTMsg {
 		if (msg.getLength() != 0) {
 			sendBuf.put(msg.getPayload());
 		}
-		if (sendBuf.array().length > 20) {
-			timeout = 300;
-		} else {
-			timeout = 100;
-		}
-		characteristic.setValue(sendBuf.array());
 
-		System.out.println("data send to BLE");
-		for (int i = 0; i < msg.getLength() + 6; i++) {
-			System.out.printf("%d ", sendBuf.array()[i]);
-		}
-		System.out.println();
+		// System.out.println("data send to BLE");
+		// for (int i = 0; i < msg.getLength() + 6; i++) {
+		// System.out.printf("%d ", sendBuf.array()[i]);
+		// }
+		// System.out.println();
+
+		// characteristic.setValue(sendBuf.array());
+		// sendBuf.clear();
+		// mContext.mBTMsgIndex++;
+		// synchronized (mContext.mWriteSuccess) {
+		// if (!mContext.mWrited) {
+		// // mContext.mWriteSuccess.wait(timeout);
+		// try {
+		// mContext.mWriteSuccess.wait(timeout);
+		// } catch (InterruptedException e) {
+		// // TODO Auto-generated catch block
+		// e.printStackTrace();
+		// }
+		// }
+		// }
+		// mContext.mBluetoothLeService.writeCharacteristic(characteristic);
+		// mContext.mWrited = false;
+		mContext.mBTMsgIndex++;
+		Bundle mBundle = new Bundle();
+		mBundle.putByteArray("BLE_MSG_SEND", sendBuf.array());
 		sendBuf.clear();
 
-		mContext.mBTMsgIndex++;
-		synchronized (mContext.mWriteSuccess) {
-			if (!mContext.mWrited) {
-				// mContext.mWriteSuccess.wait(timeout);
-				try {
-					mContext.mWriteSuccess.wait(timeout);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		}
-		mContext.mBluetoothLeService.writeCharacteristic(characteristic);
-		mContext.mWrited = false;
+		Message btMsg = mContext.mBLEThread.mHandler.obtainMessage(
+				BTMessageType.BLE_WRITE_DATA, mBundle);
+		mContext.mBLEThread.mHandler.sendMessage(btMsg);
+		// sendBuf.clear();
 	}
 
 	/**
@@ -135,21 +129,14 @@ public class ProcessBTMsg {
 		sendBuf.put(BTMessageType.BLE_ACK);
 		sendBuf.put(DataConversion.short2ByteArr(msgIndex));
 		sendBuf.put((byte) 0);
-		characteristic.setValue(sendBuf.array());
+
+		Bundle mBundle = new Bundle();
+		mBundle.putByteArray("BLE_MSG_SEND", sendBuf.array());
 		sendBuf.clear();
 
-		synchronized (mContext.mWriteSuccess) {
-			if (!mContext.mWrited) {
-				try {
-					mContext.mWriteSuccess.wait(100);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		}
-		mContext.mBluetoothLeService.writeCharacteristic(characteristic);
-		mContext.mWrited = false;
+		Message btMsg = mContext.mBLEThread.mHandler.obtainMessage(
+				BTMessageType.BLE_WRITE_ACK, mBundle);
+		mContext.mBLEThread.mHandler.sendMessage(btMsg);
 	}
 
 	/**
@@ -164,14 +151,17 @@ public class ProcessBTMsg {
 		final short msgIndex = DataConversion.byteArr2Short(msgBuf[1],
 				msgBuf[2]);
 		if (msgType == BTMessageType.BLE_ACK) {
-			byte msgLen = msgBuf[3];
-			BTMsg = new BluetoothMessage();
-			BTMsg.setType(msgType);
-			BTMsg.setIndex(msgIndex);
-			BTMsg.setLength(msgLen);
+			// BTMsg = new BluetoothMessage();
+			// BTMsg.setType(msgType);
+			// BTMsg.setIndex(msgIndex);
+			// BTMsg.setLength(msgLen);
+			Log.i(TAG, "ACK from BLE");
+			// mContext.mBLEThread.interrupt();
+//			mContext.mWriteBLESuccess = true;
+			mContext.mBLEThreadSignal.sendSignal();
+			return null;
 
 		} else {
-			sendBLEMessageACK(mContext.mWriteCharacteristic, msgIndex);
 			byte msgLen = msgBuf[3];
 			byte cmdIdH = msgBuf[4];
 			byte cmdIdL = msgBuf[5];
@@ -180,6 +170,7 @@ public class ProcessBTMsg {
 				payload[i] = msgBuf[i + 6];
 			}
 
+			sendBLEMessageACK(mContext.mWriteCharacteristic.get(1), msgIndex);
 			BTMsg = new BluetoothMessage(msgType, msgIndex, msgLen, cmdIdH,
 					cmdIdL, payload);
 		}
@@ -198,10 +189,11 @@ public class ProcessBTMsg {
 		ScenesFragment mSceneFrag = (ScenesFragment) mContext
 				.getSupportFragmentManager().getFragments().get(1);
 
-		int len = btMsg.getLength();
-		if (btMsg.getType() == BTMessageType.BLE_ACK) {
+		if (btMsg == null) {
 			return;
 		}
+
+		int len = btMsg.getLength();
 		// Get data payload
 		ByteBuffer dataBuf = ByteBuffer.allocate(len);
 		dataBuf.put(btMsg.getPayload());
@@ -247,10 +239,15 @@ public class ProcessBTMsg {
 			break;
 		case CommandID.NUM_OF_RULES:
 			Log.i(TAG, "num of rule");
+			sceneName = new String(DataConversion.getBytesFromArray(0, 8,
+					btMsg.getPayload()));
 			if (btMsg.getCmdIdH() == CommandID.SET) {
+				handlerMsg = mContext.mMsgHandler
+						.obtainMessage(CommandID.NUM_OF_RULES);
+				mContext.mMsgHandler.obtainMessage(CommandID.NUM_OF_RULES,
+						sceneName);
+				mContext.mMsgHandler.sendMessage(handlerMsg);
 			} else {
-				sceneName = new String(DataConversion.getBytesFromArray(0, 8,
-						btMsg.getPayload()));
 				sendNumOfRule(sceneName);
 			}
 
@@ -345,7 +342,7 @@ public class ProcessBTMsg {
 		payload.putShort((short) scene.getNumOfRule());
 		mMsg.setPayload(payload.array());
 		payload.clear();
-		putBLEMessage(mContext.mWriteCharacteristic, mMsg);
+		putBLEMessage(mMsg);
 	}
 
 	private void sendRuleListToCC(String sceneName, short ruleIndex) {
@@ -387,7 +384,7 @@ public class ProcessBTMsg {
 
 				mMsg.setPayload(payload.array());
 				payload.clear();
-				putBLEMessage(mContext.mWriteCharacteristic, mMsg);
+				putBLEMessage(mMsg);
 			}
 		} else {
 			Rule_c mRule = mRuleList.get(ruleIndex);
@@ -418,7 +415,7 @@ public class ProcessBTMsg {
 			mMsg.setPayload(payload.array());
 			payload.clear();
 
-			putBLEMessage(mContext.mWriteCharacteristic, mMsg);
+			putBLEMessage(mMsg);
 		}
 	}
 
@@ -611,7 +608,7 @@ public class ProcessBTMsg {
 	}
 
 	/**
-	 * Determine if device exist in zone or not 
+	 * Determine if device exist in zone or not
 	 * 
 	 * @param zoneID
 	 * @param devID

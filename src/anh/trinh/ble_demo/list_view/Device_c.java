@@ -1,6 +1,5 @@
 package anh.trinh.ble_demo.list_view;
 
-import android.R;
 import anh.trinh.ble_demo.data.DeviceTypeDef;
 
 public class Device_c {

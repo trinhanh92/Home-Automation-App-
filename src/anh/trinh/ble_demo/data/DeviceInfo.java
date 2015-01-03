@@ -1,9 +1,5 @@
 package anh.trinh.ble_demo.data;
 
-import android.R.integer;
-import android.text.Html;
-import anh.trinh.ble_demo.R;
-
 /**
  * @version 1.0
  * @author Anh Trinh
