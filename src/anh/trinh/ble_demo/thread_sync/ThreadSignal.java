@@ -4,11 +4,12 @@ public class ThreadSignal {
 	private volatile boolean hasSignaled = false;
 	private Object mLockOn = new Object();
 
-	public void waitSignal() {
+	public void waitSignal(int timeout) {
 		synchronized (mLockOn) {
 			if (!hasSignaled) {
 				try {
-					mLockOn.wait(200);
+					mLockOn.wait(timeout);
+//					mLockOn.wait();
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}

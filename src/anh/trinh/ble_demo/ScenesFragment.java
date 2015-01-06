@@ -2,7 +2,6 @@ package anh.trinh.ble_demo;
 
 import java.util.ArrayList;
 
-import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
@@ -15,8 +14,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.AbsListView;
-import android.widget.AbsListView.OnScrollListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ExpandableListView;
@@ -47,55 +44,51 @@ public class ScenesFragment extends Fragment {
 		mSceneExpList.setGroupIndicator(null);
 
 		// listen group expand to get rule list of inactive scene
-		// mSceneExpList.setOnGroupExpandListener(new OnGroupExpandListener() {
-		//
-		// @Override
-		// public void onGroupExpand(int groupPosition) {
-		// // TODO Auto-generated method stub
-		// if ((mContext.mSceneList.get(groupPosition).getNumOfRule() != 0)
-		// && !mContext.mSceneList.get(groupPosition).getActived()) {
-		// BluetoothMessage btMsg = new BluetoothMessage();
-		// btMsg.setType(BTMessageType.BLE_DATA);
-		// btMsg.setIndex(mContext.mBTMsgIndex);
-		// btMsg.setLength((byte) 10);
-		// btMsg.setCmdIdH((byte) CommandID.GET);
-		// btMsg.setCmdIdL((byte) CommandID.RULE_WITH_INDEX);
-		// ByteBuffer payload = ByteBuffer.allocate(10);
-		// payload.put(mContext.mSceneList.get(groupPosition)
-		// .getName().getBytes());
-		// payload.put(new byte[] { (byte) 0xFF, (byte) 0xFF });
-		// btMsg.setPayload(payload.array());
-		// payload.clear();
-		// mContext.mProcessMsg.putBLEMessage(
-		// mContext.mWriteCharacteristic, btMsg);
-		// timeout_receive_rule(5000);
-		// }
-		// }
-		// });
-
-		// list view scroll listener
-//		mSceneExpList.setOnScrollListener(new OnScrollListener() {
+//		mSceneExpList.setOnGroupExpandListener(new OnGroupExpandListener() {
 //
 //			@Override
-//			public void onScrollStateChanged(AbsListView view, int scrollState) {
+//			public void onGroupExpand(int groupPosition) {
+//				Scene_c mScene = listOfScene.get(groupPosition);
+//				if ((mScene.getNumOfRule() != 0) && !mScene.getActived()
+//						&& !mScene.isRuleRequested()) {
 //
-//			}
-//
-//			@Override
-//			public void onScroll(AbsListView view, int firstVisibleItem,
-//					int visibleItemCount, int totalItemCount) {
-//				if (firstVisibleItem > 1) {
-//					mContext.getActionBar().setNavigationMode(
-//							ActionBar.NAVIGATION_MODE_STANDARD);
-//					mContext.invalidateOptionsMenu();
-//				} else {
-//					mContext.getActionBar().setNavigationMode(
-//							ActionBar.NAVIGATION_MODE_TABS);
-//					mContext.invalidateOptionsMenu();
+//					listOfScene.get(groupPosition).ruleRequestSuccess(
+//							true);
+//					BluetoothMessage btMsg = new BluetoothMessage();
+//					btMsg.setType(BTMessageType.BLE_DATA);
+//					btMsg.setIndex(mContext.mBTMsgIndex);
+//					btMsg.setLength((byte) 8);
+//					btMsg.setCmdIdH((byte) CommandID.GET);
+//					btMsg.setCmdIdL((byte) CommandID.NUM_OF_RULES);
+//					btMsg.setPayload(mScene.getName().getBytes());
+//					mContext.mProcessMsg.putBLEMessage(btMsg);
 //				}
-//
 //			}
 //		});
+
+		// list view scroll listener
+		// mSceneExpList.setOnScrollListener(new OnScrollListener() {
+		//
+		// @Override
+		// public void onScrollStateChanged(AbsListView view, int scrollState) {
+		//
+		// }
+		//
+		// @Override
+		// public void onScroll(AbsListView view, int firstVisibleItem,
+		// int visibleItemCount, int totalItemCount) {
+		// if (firstVisibleItem > 1) {
+		// mContext.getActionBar().setNavigationMode(
+		// ActionBar.NAVIGATION_MODE_STANDARD);
+		// mContext.invalidateOptionsMenu();
+		// } else {
+		// mContext.getActionBar().setNavigationMode(
+		// ActionBar.NAVIGATION_MODE_TABS);
+		// mContext.invalidateOptionsMenu();
+		// }
+		//
+		// }
+		// });
 		//
 		btnAddScene.setOnClickListener(new OnClickListener() {
 
@@ -213,11 +206,12 @@ public class ScenesFragment extends Fragment {
 			mAdapter.notifyDataSetChanged();
 
 			for (int i = 0; i < listOfScene.size(); i++) {
-				if (listOfScene.get(i).getActived() == true) {
+				if (listOfScene.get(i).getActived() == true && listOfScene.get(i).getNumOfRule() != 0) {
 					mSceneExpList.expandGroup(i);
-				} else {
-					mSceneExpList.collapseGroup(i);
-				}
+				} 
+//					else {
+//					mSceneExpList.collapseGroup(i);
+//				}
 			}
 		}
 	}

@@ -8,6 +8,8 @@ public class Scene_c {
 	private int sceneIndex;
 	private boolean isActived;
 	private byte isActivedByte;
+	
+	private boolean isRuleRequest = true;
 
 	private ArrayList<Rule_c> listOfRules = new ArrayList<Rule_c>();
 
@@ -77,6 +79,14 @@ public class Scene_c {
 
 	public int getNumOfRule() {
 		return listOfRules.size();
+	}
+	
+	public boolean isRuleRequested(){
+		return this.isRuleRequest;
+	}
+	
+	public void ruleRequestSuccess(boolean isRequested){
+		this.isRuleRequest = isRequested; 
 	}
 
 }

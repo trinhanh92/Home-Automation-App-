@@ -12,11 +12,9 @@ public class Rule_c {
 	private int mActDevID;
 	private int mActDevVal;
 	
-	private int startDateTime;
 	private int startDate;
 	private int startTime;
 	
-	private int endDateTime;
 	private int endDate;
 	private int endTime;
 	
@@ -81,9 +79,8 @@ public class Rule_c {
 	}
 	
 	public void setStartDateTime(int startTime){
-		this.startDateTime = startTime;
-		this.startDate = startTime & 0xFFFF0000;
-		this.startTime = startTime & 0xFFFF;
+		this.startDate = (startTime & 0xFFFF0000);
+		this.startTime = startTime & 0x0000FFFF;
 	}
 	
 	public void setStartDate(int startDate){
@@ -95,9 +92,8 @@ public class Rule_c {
 	}
 	
 	public void setEndDateTime(int endTime){
-		this.endDateTime = endTime;
-		this.endDate = endTime & 0xFFFF0000;
-		this.endTime = endTime & 0xffff;
+		this.endDate = (endTime & 0xFFFF0000);
+		this.endTime = endTime & 0x0000ffff;
 	}
 	
 	public void setEndDate(int date){
@@ -108,7 +104,7 @@ public class Rule_c {
 		this.endTime  = time;
 	}
 	public int getStartDateTime(){
-		return this.startDateTime = this.startDate | this.startTime;
+		return (this.startDate) | this.startTime;
 	}
 	
 	public int getStartDate(){
@@ -120,7 +116,7 @@ public class Rule_c {
 	}
 	
 	public int getEndDateTime(){
-		return this.endDateTime = this.endDate | this.endTime;
+		return (this.endDate) | this.endTime;
 	}
 	
 	public int getEndDate(){

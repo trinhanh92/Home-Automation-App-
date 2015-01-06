@@ -1,21 +1,13 @@
 package anh.trinh.ble_demo.list_view;
 
-import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.sql.Time;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-
-import org.w3c.dom.Text;
-
 import android.app.AlertDialog;
-import android.app.AlertDialog.Builder;
 import android.app.DatePickerDialog;
 import android.app.ProgressDialog;
 import android.app.TimePickerDialog;
@@ -31,14 +23,10 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.BaseExpandableListAdapter;
-import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
-import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -47,15 +35,10 @@ import android.widget.PopupMenu;
 import android.widget.TimePicker;
 import android.widget.Toast;
 import android.widget.PopupMenu.OnMenuItemClickListener;
-import android.widget.Spinner;
 import android.widget.TextView;
 import anh.trinh.ble_demo.HomeActivity;
 import anh.trinh.ble_demo.R;
-import anh.trinh.ble_demo.custom_view.CustomSpinner;
-import anh.trinh.ble_demo.custom_view.DateDisplayPicker;
-import anh.trinh.ble_demo.custom_view.DeviceArrayAdapter;
 import anh.trinh.ble_demo.custom_view.NDSpinner;
-import anh.trinh.ble_demo.custom_view.TimeDisplayPicker;
 import anh.trinh.ble_demo.data.BTMessageType;
 import anh.trinh.ble_demo.data.BluetoothMessage;
 import anh.trinh.ble_demo.data.CommandID;
@@ -441,7 +424,8 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 					R.layout.scene_layout, null);
 
 		}
-		final CheckBox isActive = (CheckBox) convertView.findViewById(R.id.isActive);
+		final CheckBox isActive = (CheckBox) convertView
+				.findViewById(R.id.isActive);
 		TextView mSceneName = (TextView) convertView
 				.findViewById(R.id.sceneName);
 		final ImageButton btnSceneMenu = (ImageButton) convertView
@@ -452,38 +436,8 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 		btnSceneMenu.setFocusable(false);
 
 		// set active scene
-//		isActive.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-//
-//			@Override
-//			public void onCheckedChanged(CompoundButton v, boolean isChecked) {
-//				((Scene_c) getGroup(scenePos)).setActived(isChecked);
-//				BluetoothMessage btMsg = new BluetoothMessage();
-//				btMsg.setType(BTMessageType.BLE_DATA);
-//				btMsg.setIndex(mContext.mBTMsgIndex);
-//				btMsg.setLength((byte) 9);
-//				btMsg.setCmdIdH((byte) CommandID.SET);
-//				btMsg.setCmdIdL((byte) CommandID.ACT_SCENE_WITH_INDEX);
-//				ByteBuffer payload = ByteBuffer.allocate(9);
-//				payload.put((byte) sceneObj.getID());
-//				payload.put(sceneObj.getName().getBytes());
-//				btMsg.setPayload(payload.array());
-//				payload.clear();
-//				mContext.mProcessMsg.putBLEMessage(
-//						mContext.mWriteCharacteristic, btMsg);
-//				//set last active scene back to inactive 
-//				if (listOfScene.get(scenePos).getActived()) {
-//					for (int i = 0; i < listOfScene.size(); i++) {
-//						if (listOfScene.get(i).getActived() && (i != scenePos)) {
-//							listOfScene.get(i).setActived(false);
-//							notifyDataSetChanged();
-//						}
-//					}
-//				}
-//			}
-//		});
-		
 		isActive.setOnClickListener(new OnClickListener() {
-			
+
 			@Override
 			public void onClick(View v) {
 				((Scene_c) getGroup(scenePos)).setActived(isActive.isChecked());
@@ -498,9 +452,8 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 				payload.put(sceneObj.getName().getBytes());
 				btMsg.setPayload(payload.array());
 				payload.clear();
-				mContext.mProcessMsg.putBLEMessage(
-						btMsg);
-				//set last active scene back to inactive 
+				mContext.mProcessMsg.putBLEMessage(btMsg);
+				// set last active scene back to inactive
 				if (listOfScene.get(scenePos).getActived()) {
 					for (int i = 0; i < listOfScene.size(); i++) {
 						if (listOfScene.get(i).getActived() && (i != scenePos)) {
@@ -509,7 +462,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 						}
 					}
 				}
-				
+
 			}
 		});
 		// button Menu click
@@ -742,22 +695,26 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 						if (view.isShown()) {
 							v.setText(year + "/" + (monthOfYear + 1) + "/"
 									+ dayOfMonth);
-
 							String getTimeString = v.getText().toString();
 							if (v.getId() == R.id.fromDate) {
 								try {
+									((Rule_c) getChild(scenePos, rulePos))
+									.setStartDate(javaToDosTime(0));
+									
 									((Rule_c) getChild(scenePos, rulePos))
 											.setStartDate(javaToDosTime(sdf
 													.parse(getTimeString)
 													.getTime()));
 									// Log.i(TAG, "time time");
-									// System.out.println(sdf.parse(getTimeString));
+//									 System.out.println(sdf.parse(getTimeString));
 								} catch (ParseException e) {
 									// TODO Auto-generated catch block
 									e.printStackTrace();
 								}
 							} else {
 								try {
+									((Rule_c) getChild(scenePos, rulePos))
+									.setEndDate(javaToDosTime(0));
 									((Rule_c) getChild(scenePos, rulePos))
 											.setEndDate(javaToDosTime(sdf
 													.parse(getTimeString)
@@ -787,7 +744,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 	private long dosToJavaTime(int dosTime) {
 		Calendar cal = Calendar.getInstance();
 		cal.set(Calendar.YEAR, ((dosTime >> 25) & 0x7f) + 1980);
-		cal.set(Calendar.MONTH, ((dosTime >> 21) & 0x0f) - 1);
+		cal.set(Calendar.MONTH, ((dosTime >> 21) & 0x0f));
 		cal.set(Calendar.DATE, ((dosTime >> 16) & 0x1f));
 		cal.set(Calendar.HOUR_OF_DAY, (dosTime >> 11) & 0x1f);
 		cal.set(Calendar.MINUTE, (dosTime >> 5) & 0x3f);
@@ -803,13 +760,26 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 	 * @param jTime
 	 * @return
 	 */
-	@SuppressWarnings("deprecation")
 	private int javaToDosTime(long jTime) {
-		Date d = new Date(jTime);
-		int year = d.getYear() + 1900;
-		return (year - 1980) << 25 | (d.getMonth() + 1) << 21
-				| (d.getDate()) << 16 | d.getHours() << 11
-				| d.getMinutes() << 5 | d.getSeconds() >> 1;
+		Calendar cal = Calendar.getInstance();
+		cal.setTimeInMillis(jTime);
+		// Date d = new Date(jTime);
+		// int year = d.getYear();
+		// return (year - 1980) << 25 | (d.getMonth() + 1) << 21
+		// | (d.getDate()) << 16 | d.getHours() << 11
+		// | d.getMinutes() << 5 | d.getSeconds() >> 1;
+		int year = cal.get(Calendar.YEAR) + 1900 - 1980;
+		int month = cal.get(Calendar.MONTH);
+		int day = cal.get(Calendar.DAY_OF_MONTH);
+		int hour = cal.get(Calendar.HOUR_OF_DAY);
+		int min = cal.get(Calendar.MINUTE);
+		int sec = cal.get(Calendar.SECOND);
+//		Toast.makeText(mContext.getApplicationContext(), String.valueOf(year),
+//				Toast.LENGTH_SHORT).show();
+		
+		 return (year) << 25 | (month) << 21
+		 | day << 16 | hour << 11
+		 | min << 5 | sec >> 1;
 	}
 
 	/**
@@ -843,8 +813,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 		btMsg.setCmdIdH((byte) CommandID.SET);
 		btMsg.setCmdIdL((byte) CommandID.NEW_SCENE);
 		btMsg.setPayload(listOfScene.get(scenePos).getName().getBytes());
-		mContext.mProcessMsg
-				.putBLEMessage(btMsg);
+		mContext.mProcessMsg.putBLEMessage(btMsg);
 
 		new CountDownTimer(11000, 11000) {
 
@@ -861,9 +830,9 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 					Toast.makeText(mContext.getApplicationContext(),
 							"save scene not success", Toast.LENGTH_SHORT)
 							.show();
-//					listOfScene.clear();
-//					listOfScene.addAll(mContext.mSceneList);
-//					notifyDataSetChanged();
+					// listOfScene.clear();
+					// listOfScene.addAll(mContext.mSceneList);
+					// notifyDataSetChanged();
 				}
 
 			}
@@ -947,8 +916,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 					payload.put(sceneName.getBytes());
 					btMsg.setPayload(payload.array());
 					payload.clear();
-					mContext.mProcessMsg.putBLEMessage(
-							btMsg);
+					mContext.mProcessMsg.putBLEMessage(btMsg);
 
 				} else {
 					Toast.makeText(mContext.getApplicationContext(),
@@ -999,8 +967,7 @@ public class SceneExpListAdapter extends BaseExpandableListAdapter {
 							btMsg.setCmdIdH((byte) CommandID.SET);
 							btMsg.setCmdIdL((byte) CommandID.REMOVE_SCENE);
 							btMsg.setPayload(curSceneName.getBytes());
-							mContext.mProcessMsg.putBLEMessage(
-									btMsg);
+							mContext.mProcessMsg.putBLEMessage(btMsg);
 						}
 					});
 

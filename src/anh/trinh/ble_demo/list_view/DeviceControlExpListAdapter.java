@@ -87,7 +87,8 @@ public class DeviceControlExpListAdapter extends BaseExpandableListAdapter {
 				.findViewById(R.id.btnRename);
 
 		btnRename.setFocusable(false);
-		mZoneName.setText(zoneObj.getName());
+		mZoneName.setText(zoneObj.getName() + " "
+				+ String.valueOf(zoneObj.getID()));
 		// set zone view color
 		switch (zoneObj.getID() % 5) {
 		case 0:
@@ -165,7 +166,8 @@ public class DeviceControlExpListAdapter extends BaseExpandableListAdapter {
 								}
 
 								zoneObj.setName(zoneName);
-								mZoneName.setText(zoneName);
+								mZoneName.setText(zoneName + " s"
+										+ String.valueOf(zoneObj.getID()));
 								listOfRoom.get(groupPos).setName(zoneName);
 								BluetoothMessage btMsg = new BluetoothMessage();
 								btMsg.setType(BTMessageType.BLE_DATA);
@@ -178,8 +180,7 @@ public class DeviceControlExpListAdapter extends BaseExpandableListAdapter {
 								payload.put(zoneName.getBytes());
 								btMsg.setPayload(payload.array());
 								payload.clear();
-								mContext.mProcessMsg.putBLEMessage(
-										btMsg);
+								mContext.mProcessMsg.putBLEMessage(btMsg);
 
 							}
 						});
@@ -579,7 +580,7 @@ public class DeviceControlExpListAdapter extends BaseExpandableListAdapter {
 			break;
 		case DeviceTypeDef.GAS_SENSOR:
 			mDevViewHolder.mDevImg.setImageResource(R.drawable.gas_sensor);
-			mDevViewHolder.mDevVal.setText(Short.toString(devVal) + " ppm");
+			mDevViewHolder.mDevVal.setText(String.valueOf(devVal & 0x0000FFFF) + " ppm");
 			break;
 		case DeviceTypeDef.TEMP_SENSOR:
 			mDevViewHolder.mDevImg.setImageResource(R.drawable.temp_sensor);

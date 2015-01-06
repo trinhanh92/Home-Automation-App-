@@ -3,17 +3,17 @@
     android:id="@+id/TableLayout1"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/device_list_style"
+    android:paddingBottom="@dimen/activity_vertical_margin"
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:background="@drawable/device_list_style" >
-    
-    <TableRow 
+    android:paddingTop="@dimen/activity_vertical_margin" >
+
+    <TableRow
         android:id="@+id/tabRow0"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="right">
+        android:gravity="right" >
 
         <ImageButton
             android:id="@+id/btnDel"
@@ -23,13 +23,12 @@
             android:background="@drawable/btn_rule_menu_selector"
             android:src="@drawable/btn_delete" />
 
-        <ImageButton 
+        <ImageButton
             android:id="@+id/btnSave"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/btn_save"
             android:background="@drawable/btn_rule_menu_selector"
-            />
+            android:src="@drawable/btn_save" />
     </TableRow>
 
     <TableRow
@@ -42,29 +41,33 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textColor="@color/cyan"
             android:text="@string/condition"
+            android:textColor="@color/cyan"
             android:textSize="20sp" />
-        
-        <TextView
-            android:id="@+id/tvTittle1"
+
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textColor="@color/cyan"
-            android:text="@string/from"
-            android:textSize="20sp" />
-        
-        <TextView
-            android:id="@+id/tvTittle2"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textColor="@color/cyan"
-            android:text="@string/to"
-            android:textSize="20sp" />
-        
-        
+            android:layout_weight="2"
+            android:weightSum="1" >
+            <TextView
+                android:id="@+id/tvTittle1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight=".55"
+                android:text="@string/from"
+                android:textColor="@color/cyan"
+                android:textSize="20sp" />
+
+            <TextView
+                android:id="@+id/tvTittle2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight=".45"
+                android:text="@string/to"
+                android:textColor="@color/cyan"
+                android:textSize="20sp" />
+        </LinearLayout>
     </TableRow>
 
     <TableRow
@@ -94,13 +97,13 @@
                     android:id="@+id/condDevChoose"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight=".5" />
+                    android:layout_weight=".55" />
 
                 <EditText
                     android:id="@+id/condDevVal"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight=".5"
+                    android:layout_weight=".45"
                     android:ems="10"
                     android:inputType="number" />
             </LinearLayout>
@@ -109,38 +112,36 @@
                 android:id="@+id/llTimeRange"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:weightSum="1" android:baselineAligned="false">
+                android:baselineAligned="false"
+                android:weightSum="1" >
 
                 <TextView
                     android:id="@+id/fromDate"
+                    style="@android:style/Widget.Holo.Spinner"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="0.32"
-                    style="@android:style/Widget.Holo.Spinner"/>
-                
-                
+                    android:layout_weight="0.32" />
+
                 <TextView
                     android:id="@+id/fromTime"
+                    style="@android:style/Widget.Holo.Spinner"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="0.18"
-                    style="@android:style/Widget.Holo.Spinner"/>
-
+                    android:layout_weight="0.18" />
 
                 <TextView
                     android:id="@+id/toDate"
+                    style="@android:style/Widget.Holo.Spinner"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="0.32"
-                    style="@android:style/Widget.Holo.Spinner"/>
-                
+                    android:layout_weight="0.32" />
+
                 <TextView
                     android:id="@+id/toTime"
+                    style="@android:style/Widget.Holo.Spinner"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="0.18"
-                    style="@android:style/Widget.Holo.Spinner"/>
-                
+                    android:layout_weight="0.18" />
             </LinearLayout>
         </FrameLayout>
     </TableRow>
@@ -154,30 +155,35 @@
             android:id="@+id/mActTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:textColor="@color/cyan"
+            android:layout_weight="1"
             android:text="@string/action"
-            android:textSize="20sp" 
-            android:layout_weight="1"/>
-        
-        <TextView
-            android:id="@+id/tvTittle3"
+            android:textColor="@color/cyan"
+            android:textSize="20sp" />
+
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textColor="@color/cyan"
-            android:text="@string/device"
-            android:textSize="20sp" />
-        
-        <TextView
-            android:id="@+id/tvTittle4"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textColor="@color/cyan"
-            android:text="@string/value"
-            android:textSize="20sp" />
-        
-        
+            android:layout_weight="2"
+            android:weightSum="1" >
+
+            <TextView
+                android:id="@+id/tvTittle3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight=".55"
+                android:text="@string/device"
+                android:textColor="@color/cyan"
+                android:textSize="20sp" />
+
+            <TextView
+                android:id="@+id/tvTittle4"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight=".45"
+                android:text="@string/value"
+                android:textColor="@color/cyan"
+                android:textSize="20sp" />
+        </LinearLayout>
     </TableRow>
 
     <TableRow
@@ -202,13 +208,13 @@
                 android:id="@+id/actDevChoose"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight=".5" />
+                android:layout_weight=".55" />
 
             <EditText
                 android:id="@+id/actDevVal"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight=".5"
+                android:layout_weight=".45"
                 android:ems="10"
                 android:inputType="number" />
         </LinearLayout>

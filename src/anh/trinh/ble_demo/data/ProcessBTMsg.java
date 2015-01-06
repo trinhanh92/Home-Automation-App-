@@ -23,10 +23,9 @@ package anh.trinh.ble_demo.data;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import android.bluetooth.BluetoothGattCharacteristic;
+
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
 import anh.trinh.ble_demo.BluetoothLeService;
@@ -68,11 +67,13 @@ public class ProcessBTMsg {
 
 	/**
 	 * Send data to BLE device
+	 * 
 	 * @param msg
 	 * 
 	 * @return
 	 */
 	public void putBLEMessage(BluetoothMessage msg) {
+		Log.i(TAG, "BLE send DATA ");
 		ByteBuffer sendBuf = ByteBuffer.allocate(msg.getLength() + 6);
 		sendBuf.put(msg.getType());
 		sendBuf.put(DataConversion.short2ByteArr(msg.getIndex()));
@@ -82,49 +83,21 @@ public class ProcessBTMsg {
 		if (msg.getLength() != 0) {
 			sendBuf.put(msg.getPayload());
 		}
-
-		// System.out.println("data send to BLE");
-		// for (int i = 0; i < msg.getLength() + 6; i++) {
-		// System.out.printf("%d ", sendBuf.array()[i]);
-		// }
-		// System.out.println();
-
-		// characteristic.setValue(sendBuf.array());
-		// sendBuf.clear();
-		// mContext.mBTMsgIndex++;
-		// synchronized (mContext.mWriteSuccess) {
-		// if (!mContext.mWrited) {
-		// // mContext.mWriteSuccess.wait(timeout);
-		// try {
-		// mContext.mWriteSuccess.wait(timeout);
-		// } catch (InterruptedException e) {
-		// // TODO Auto-generated catch block
-		// e.printStackTrace();
-		// }
-		// }
-		// }
-		// mContext.mBluetoothLeService.writeCharacteristic(characteristic);
-		// mContext.mWrited = false;
 		mContext.mBTMsgIndex++;
 		Bundle mBundle = new Bundle();
 		mBundle.putByteArray("BLE_MSG_SEND", sendBuf.array());
 		sendBuf.clear();
-
-		Message btMsg = mContext.mBLEThread.mHandler.obtainMessage(
-				BTMessageType.BLE_WRITE_DATA, mBundle);
-		mContext.mBLEThread.mHandler.sendMessage(btMsg);
-		// sendBuf.clear();
+		mContext.mBLEThreadSend.sendMessage(BTMessageType.BLE_WRITE_DATA,
+				mBundle);
 	}
 
 	/**
 	 * Send ACK back to BLE device
 	 * 
-	 * @param characteristic
 	 * @param msg
 	 */
-	public void sendBLEMessageACK(BluetoothGattCharacteristic characteristic,
-			short msgIndex) {
-		Log.i(TAG, "send ACK " + msgIndex);
+	public void sendBLEMessageACK(short msgIndex) {
+		Log.i(TAG, "BLE send ACK " + msgIndex);
 		ByteBuffer sendBuf = ByteBuffer.allocate(4);
 		sendBuf.put(BTMessageType.BLE_ACK);
 		sendBuf.put(DataConversion.short2ByteArr(msgIndex));
@@ -133,10 +106,8 @@ public class ProcessBTMsg {
 		Bundle mBundle = new Bundle();
 		mBundle.putByteArray("BLE_MSG_SEND", sendBuf.array());
 		sendBuf.clear();
-
-		Message btMsg = mContext.mBLEThread.mHandler.obtainMessage(
-				BTMessageType.BLE_WRITE_ACK, mBundle);
-		mContext.mBLEThread.mHandler.sendMessage(btMsg);
+		mContext.mBLEThreadSend.sendMessage(BTMessageType.BLE_WRITE_ACK,
+				mBundle);
 	}
 
 	/**
@@ -151,14 +122,10 @@ public class ProcessBTMsg {
 		final short msgIndex = DataConversion.byteArr2Short(msgBuf[1],
 				msgBuf[2]);
 		if (msgType == BTMessageType.BLE_ACK) {
-			// BTMsg = new BluetoothMessage();
-			// BTMsg.setType(msgType);
-			// BTMsg.setIndex(msgIndex);
-			// BTMsg.setLength(msgLen);
-			Log.i(TAG, "ACK from BLE");
-			// mContext.mBLEThread.interrupt();
-//			mContext.mWriteBLESuccess = true;
-			mContext.mBLEThreadSignal.sendSignal();
+			if (msgIndex == mContext.mBTMsgIndex) {
+				Log.i(TAG, "ACK from BLE");
+				mContext.mBLEThreadSend.interrupt();
+			}
 			return null;
 
 		} else {
@@ -170,7 +137,7 @@ public class ProcessBTMsg {
 				payload[i] = msgBuf[i + 6];
 			}
 
-			sendBLEMessageACK(mContext.mWriteCharacteristic.get(1), msgIndex);
+			sendBLEMessageACK(msgIndex);
 			BTMsg = new BluetoothMessage(msgType, msgIndex, msgLen, cmdIdH,
 					cmdIdL, payload);
 		}
@@ -184,7 +151,6 @@ public class ProcessBTMsg {
 	 * @param msgQueue
 	 */
 	public void processBTMessage(BluetoothMessage btMsg) {
-		Message handlerMsg;
 		String sceneName;
 		ScenesFragment mSceneFrag = (ScenesFragment) mContext
 				.getSupportFragmentManager().getFragments().get(1);
@@ -198,15 +164,21 @@ public class ProcessBTMsg {
 		ByteBuffer dataBuf = ByteBuffer.allocate(len);
 		dataBuf.put(btMsg.getPayload());
 
+		BluetoothMessage mMsg = new BluetoothMessage();
 		// Analyze kind of massage
 		switch (btMsg.getCmdIdL()) {
 
 		case CommandID.NUM_OF_DEVS:
-			Log.i(TAG, "receive num of dev");
-			mContext.mNumOfDev = btMsg.getPayload()[0];
-			handlerMsg = mContext.mMsgHandler
-					.obtainMessage(CommandID.NUM_OF_DEVS);
-			mContext.mMsgHandler.sendMessage(handlerMsg);
+			Log.i(TAG, "receive num of dev:");
+			mContext.mNumOfDev = dataBuf.getInt(0);
+			mContext.mDeviceIndexMng = new boolean[mContext.mNumOfDev];
+			mMsg.setType(BTMessageType.BLE_DATA);
+			mMsg.setIndex(mContext.mBTMsgIndex);
+			mMsg.setLength((byte) 4);
+			mMsg.setCmdIdH((byte) CommandID.GET);
+			mMsg.setCmdIdL((byte) CommandID.DEV_WITH_INDEX);
+			mMsg.setPayload(DataConversion.int2ByteArr(0xFFFFFFFF));
+			putBLEMessage(mMsg);
 			break;
 		case CommandID.DEV_WITH_INDEX:
 			Log.i(TAG, "dev with index");
@@ -215,7 +187,7 @@ public class ProcessBTMsg {
 		case CommandID.DEV_VAL:
 			Log.i(TAG, "dev val");
 			// update device value from CC
-			updateDeviceValue(btMsg.getPayload());
+			updateDeviceValue(btMsg.getPayload(), mContext.requestServerBusy);
 			break;
 		case CommandID.ZONE_NAME:
 			getZoneName(btMsg.getPayload());
@@ -224,10 +196,13 @@ public class ProcessBTMsg {
 			Log.i(TAG, "num of scene");
 			mContext.mNumOfActScene = btMsg.getPayload()[0];
 			mContext.mNumOfInactScene = btMsg.getPayload()[1];
-			handlerMsg = mContext.mMsgHandler
-					.obtainMessage(CommandID.NUM_OF_SCENES);
-			mContext.mMsgHandler.sendMessage(handlerMsg);
-
+			mMsg.setType(BTMessageType.BLE_DATA);
+			mMsg.setIndex(mContext.mBTMsgIndex);
+			mMsg.setLength((byte) 1);
+			mMsg.setCmdIdH((byte) CommandID.GET);
+			mMsg.setCmdIdL((byte) CommandID.ACT_SCENE_WITH_INDEX);
+			mMsg.setPayload(new byte[] { (byte) 0xFF });
+			putBLEMessage(mMsg);
 			break;
 		case CommandID.ACT_SCENE_WITH_INDEX:
 			Log.i(TAG, "act scene with index");
@@ -238,15 +213,25 @@ public class ProcessBTMsg {
 			getSceneList(dataBuf.array(), false);
 			break;
 		case CommandID.NUM_OF_RULES:
-			Log.i(TAG, "num of rule");
+			Log.i(TAG, "receive num of rule");
 			sceneName = new String(DataConversion.getBytesFromArray(0, 8,
 					btMsg.getPayload()));
 			if (btMsg.getCmdIdH() == CommandID.SET) {
-				handlerMsg = mContext.mMsgHandler
-						.obtainMessage(CommandID.NUM_OF_RULES);
-				mContext.mMsgHandler.obtainMessage(CommandID.NUM_OF_RULES,
-						sceneName);
-				mContext.mMsgHandler.sendMessage(handlerMsg);
+				mContext.mNumOfRule = dataBuf.getShort(8);
+				mContext.mRuleIndexMng = new boolean[mContext.mNumOfRule];
+				mMsg.setType(BTMessageType.BLE_DATA);
+				mMsg.setIndex(mContext.mBTMsgIndex);
+				mMsg.setLength((byte) 10);
+				mMsg.setCmdIdH((byte) CommandID.GET);
+				mMsg.setCmdIdL((byte) CommandID.RULE_WITH_INDEX);
+
+				ByteBuffer payloadBuf = ByteBuffer.allocate(10);
+				payloadBuf.put(sceneName.getBytes());
+				payloadBuf.put((byte) 0xFF);
+				payloadBuf.put((byte) 0xFF);
+				mMsg.setPayload(payloadBuf.array());
+				payloadBuf.clear();
+				putBLEMessage(mMsg);
 			} else {
 				sendNumOfRule(sceneName);
 			}
@@ -291,8 +276,8 @@ public class ProcessBTMsg {
 
 			sceneName = new String(DataConversion.getBytesFromArray(0, 8,
 					btMsg.getPayload()));
-			Toast.makeText(mContext, "Add new scene successfully!",
-					Toast.LENGTH_SHORT).show();
+			Toast.makeText(mContext.getApplicationContext(),
+					"Add new scene successfully!", Toast.LENGTH_SHORT).show();
 
 			mContext.mSceneList.clear();
 			mContext.mSceneList.addAll(mSceneFrag.getListOfScene());
@@ -314,7 +299,9 @@ public class ProcessBTMsg {
 				payload));
 		for (int i = 0; i < mContext.mZoneList.size(); i++) {
 			if (mContext.mZoneList.get(i).getID() == zoneID) {
+				// if (mContext.mZoneList.get(i).getName().startsWith("Zone")) {
 				mContext.mZoneList.get(i).setName(zoneName);
+				// }
 				break;
 			}
 		}
@@ -427,7 +414,7 @@ public class ProcessBTMsg {
 	private void getRuleList(ByteBuffer dataBuf) {
 		String sceneName = new String(DataConversion.getBytesFromArray(0, 8,
 				dataBuf.array()));
-		int ruleIndex = dataBuf.getInt(8);
+		Short ruleIndex = dataBuf.getShort(8);
 		byte condition = dataBuf.get(11);
 		int timeStart = dataBuf.getInt(12);
 		int timeStop = dataBuf.getInt(16);
@@ -437,6 +424,9 @@ public class ProcessBTMsg {
 		int actDevID = dataBuf.getInt(21);
 		short actDevVal = dataBuf.getShort(25);
 
+		for (int i = 0; i < mContext.mNumOfRule; i++) {
+			mContext.mRuleIndexMng[i] = false;
+		}
 		for (int i = 0; i < mContext.mSceneList.size(); i++) {
 			if (sceneName.matches(mContext.mSceneList.get(i).getName())) {
 				Rule_c mNewRule = new Rule_c();
@@ -449,11 +439,30 @@ public class ProcessBTMsg {
 				mNewRule.setEndDateTime(timeStop);
 				mNewRule.setActDevId(actDevID);
 				mNewRule.setActDevVal(actDevVal);
-				mContext.mSceneList.get(i).addRule(mNewRule);
+
+//				if (!isRuleExist(mContext.mSceneList.get(i).getListOfRules(), ruleIndex)) {
+					mContext.mSceneList.get(i).addRule(mNewRule);
+//				}
 				break;
 			}
 		}
 
+	}
+
+	/**
+	 * Check rule exist in list
+	 * 
+	 * @param mRuleList
+	 * @param index
+	 * @return
+	 */
+	private boolean isRuleExist(ArrayList<Rule_c> mRuleList, short index) {
+		for (short i = 0; i < mRuleList.size(); i++) {
+			if (mRuleList.get(i).getRuleIndex() == index) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -475,7 +484,14 @@ public class ProcessBTMsg {
 			newSceneObj.setName(sceneName);
 			// Log.i(TAG, sceneName);
 			newSceneObj.setActived(isActived);
+			if (!isActived) {
+				newSceneObj.ruleRequestSuccess(false);
+			}
+			// for (int j = 0; j < mContext.mSceneList.size(); j++) {
+			// if (mContext.mSceneList.get(j).getID() != sceneIndex) {
 			mContext.mSceneList.add(newSceneObj);
+			// }
+			// }
 		}
 
 	}
@@ -485,10 +501,15 @@ public class ProcessBTMsg {
 	 * 
 	 */
 	public ArrayList<DeviceInfo> getDeviceList(ByteBuffer dataBuf) {
-		ArrayList<DeviceInfo> mDevList = null;
+		ArrayList<DeviceInfo> mDevList = new ArrayList<DeviceInfo>(
+				mContext.mNumOfDev);
 		int devIndex;
 		int devID;
 		short devVal;
+		// clear device index flag
+		for (int i = 0; i < mContext.mNumOfDev; i++) {
+			mContext.mDeviceIndexMng[i] = false;
+		}
 		for (int i = 0; i < dataBuf.capacity() / 10; i += 10) {
 			devIndex = dataBuf.getInt(i);
 			devID = dataBuf.getInt(i + 4);
@@ -500,7 +521,7 @@ public class ProcessBTMsg {
 			if (!isDeviceExist(mContext.mDevInfoList, devID)) {
 				mContext.mDevInfoList.add(newDev);
 			}
-
+			mContext.mDeviceIndexMng[devIndex] = true;
 		}
 		return mDevList;
 
@@ -540,8 +561,10 @@ public class ProcessBTMsg {
 	 * Update device value from CC
 	 * 
 	 * @param payLoad
+	 * @param requestServerBusy
+	 *            TODO
 	 */
-	private void updateDeviceValue(byte[] payLoad) {
+	private void updateDeviceValue(byte[] payLoad, boolean requestServerBusy) {
 		// int mDevID = DataConversion.byteArr2Int(payLoad);
 		// short mDevVal = DataConversion.byteArr2Short(payLoad);
 		// get device value version 2
@@ -564,17 +587,17 @@ public class ProcessBTMsg {
 			mDevInfo = null;
 		}
 
-		mContext.runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-				// TODO Auto-generated method stub
-				DeviceControlFragment mDeviceFrag = (DeviceControlFragment) mContext
-						.getSupportFragmentManager().getFragments().get(0);
-				// mDeviceFrag.updateUI(mContext.mDevInfoList);
-				updateDevValInZone(mDevID, mDevVal);
-				mDeviceFrag.updateUI(mContext.mZoneList);
-			}
-		});
+		if (!requestServerBusy) {
+			mContext.runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					DeviceControlFragment mDeviceFrag = (DeviceControlFragment) mContext
+							.getSupportFragmentManager().getFragments().get(0);
+					updateDevValInZone(mDevID, mDevVal);
+					mDeviceFrag.updateUI(mContext.mZoneList);
+				}
+			});
+		}
 	}
 
 	/**
